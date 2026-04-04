@@ -94,18 +94,49 @@
     }
     #download-btn:hover { background: #357abd; }
 
-    #list-output { margin-top: 1.5rem; width: 100%; max-width: 700px; overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-    th {
-      text-align: left; padding: 0.5rem 0.75rem;
-      background: #16213e; color: #7ab8f5;
-      border-bottom: 1px solid #2a4060;
+    #list-output { margin-top: 1.5rem; width: 100%; max-width: 700px; }
+
+    .tree-list {
+      list-style: none;
+      padding-left: 0;
+      font-family: monospace;
+      font-size: 0.88rem;
     }
-    td {
-      padding: 0.4rem 0.75rem; border-bottom: 1px solid #1e2e44;
-      font-family: monospace; word-break: break-all;
+    .tree-list ul {
+      list-style: none;
+      padding-left: 1.25rem;
+      border-left: 1px solid #2a4060;
+      margin-left: 0.4rem;
     }
-    tr:nth-child(even) td { background: rgba(22,33,62,0.4); }
+    .tree-item { padding: 0.2rem 0; }
+
+    .dir-name {
+      cursor: pointer;
+      color: #7ab8f5;
+      user-select: none;
+    }
+    .dir-name:hover { color: #aad4ff; }
+
+    .chevron {
+      display: inline-block;
+      font-size: 0.7em;
+      transform: rotate(90deg);
+      transition: transform 0.15s ease;
+      margin-right: 0.3em;
+    }
+    .dir.collapsed > .dir-name .chevron {
+      transform: rotate(0deg);
+    }
+    .dir.collapsed > ul {
+      display: none;
+    }
+
+    .file-name { color: #e0e0e0; }
+    .file-size {
+      color: #666;
+      font-size: 0.8em;
+      margin-left: 0.5em;
+    }
 
     .spinner {
       display: inline-block; width: 1em; height: 1em;
@@ -173,10 +204,7 @@
 
   <!-- List mode output -->
   <div id="list-output" style="display:none">
-    <table id="file-table">
-      <thead><tr><th>Path</th><th>Size</th></tr></thead>
-      <tbody id="file-table-body"></tbody>
-    </table>
+    <div id="file-tree"></div>
   </div>
 
   <script>
