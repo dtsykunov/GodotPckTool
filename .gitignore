@@ -1,4 +1,7 @@
 /build-cross/
 /build/
 /build-podman/
+/build-wasm/
 /install/
+/web/godotpcktool.js
+/web/godotpcktool.wasm

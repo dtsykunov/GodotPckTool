@@ -88,7 +88,7 @@ clean: remove-podman-image
 
 # WASM / browser build (requires Emscripten: nix develop or emsdk)
 compile-wasm:
-	emcmake cmake -B build-wasm web/ && cmake --build build-wasm
+	emcmake cmake -B build-wasm web/ && cmake --build build-wasm --parallel
 
 install-wasm: compile-wasm
 	cp build-wasm/godotpcktool.js build-wasm/godotpcktool.wasm web/
