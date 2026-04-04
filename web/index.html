@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Godot PCK Extractor</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    h1 { font-size: 1.6rem; margin-bottom: 0.4rem; color: #fff; }
+    p.subtitle { color: #aaa; margin-bottom: 2rem; font-size: 0.95rem; }
+    #drop-zone {
+      border: 2px dashed #4a90d9;
+      border-radius: 12px;
+      padding: 3rem 4rem;
+      text-align: center;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+      width: 100%;
+      max-width: 480px;
+    }
+    #drop-zone.drag-over { background: #1e3a5f; border-color: #7ab8f5; }
+    #drop-zone p { color: #aaa; margin-top: 0.5rem; font-size: 0.9rem; }
+    #file-input { display: none; }
+    #status {
+      margin-top: 1.5rem;
+      min-height: 2rem;
+      text-align: center;
+      font-size: 0.95rem;
+      width: 100%;
+      max-width: 480px;
+    }
+    #status.error { color: #ff6b6b; }
+    #status.success { color: #6bffb8; }
+    .spinner {
+      display: inline-block;
+      width: 1em; height: 1em;
+      border: 2px solid #4a90d9;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 0.4em;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #download-btn {
+      display: none;
+      margin-top: 1rem;
+      padding: 0.7rem 2rem;
+      background: #4a90d9;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    #download-btn:hover { background: #357abd; }
+  </style>
+</head>
+<body>
+  <h1>Godot PCK Extractor</h1>
+  <p class="subtitle">Drop a <code>.pck</code> file to extract its contents as a <code>.zip</code></p>
+
+  <div id="drop-zone">
+    <svg width="48" height="48" fill="none" stroke="#4a90d9" stroke-width="2"
+         viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="17 8 12 3 7 8"/>
+      <line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+    <p>Drag &amp; drop a .pck file here, or click to select</p>
+    <input type="file" id="file-input" accept=".pck">
+  </div>
+
+  <div id="status"></div>
+  <a id="download-btn">Download .zip</a>
+
+  <script>
+    // ── State ────────────────────────────────────────────────────────────────
+    let wasmModule = null;  // cached Emscripten module instance
+    let jszipLib   = null;  // cached JSZip class
+
+    // ── UI helpers ───────────────────────────────────────────────────────────
+    const dropZone    = document.getElementById('drop-zone');
+    const fileInput   = document.getElementById('file-input');
+    const statusEl    = document.getElementById('status');
+    const downloadBtn = document.getElementById('download-btn');
+
+    // All user-controlled content goes through textContent, never innerHTML.
+    function setStatus(message, cls) {
+      statusEl.textContent = message;
+      statusEl.className   = cls || '';
+    }
+
+    // Spinner uses only trusted static markup — no user content.
+    function setStatusSpinner(staticMessage) {
+      statusEl.className = '';
+      statusEl.textContent = '';
+      const spinner = document.createElement('span');
+      spinner.className = 'spinner';
+      statusEl.appendChild(spinner);
+      // staticMessage is a hard-coded string from our own code, safe to use as text
+      statusEl.appendChild(document.createTextNode(' ' + staticMessage));
+    }
+
+    function showDownload(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      downloadBtn.href = url;
+      downloadBtn.download = filename;
+      downloadBtn.style.display = 'inline-block';
+    }
+
+    function hideDownload() {
+      downloadBtn.style.display = 'none';
+      downloadBtn.href = '';
+    }
+
+    // ── Lazy loaders ─────────────────────────────────────────────────────────
+    function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = src;
+        s.onload = resolve;
+        s.onerror = () => reject(new Error('Failed to load script: ' + src));
+        document.head.appendChild(s);
+      });
+    }
+
+    async function getWasmModule() {
+      if (wasmModule) return wasmModule;
+      console.log('[godotpcktool] Loading WASM module...');
+      await loadScript('godotpcktool.js');
+      // GodotPckTool is now a global factory (MODULARIZE=1, EXPORT_NAME=GodotPckTool)
+      wasmModule = await GodotPckTool();
+      console.log('[godotpcktool] WASM module ready');
+      return wasmModule;
+    }
+
+    async function getJSZip() {
+      if (jszipLib) return jszipLib;
+      console.log('[godotpcktool] Loading JSZip...');
+      await loadScript(
+        'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'
+      );
+      jszipLib = window.JSZip;
+      console.log('[godotpcktool] JSZip ready');
+      return jszipLib;
+    }
+
+    // ── Core extraction logic ─────────────────────────────────────────────────
+    async function extractAndZip(file) {
+      hideDownload();
+      setStatusSpinner('Loading extractor\u2026');
+
+      let Module, JSZip;
+      try {
+        [Module, JSZip] = await Promise.all([getWasmModule(), getJSZip()]);
+      } catch (e) {
+        console.error('[godotpcktool] Load error:', e);
+        setStatus('Failed to load extractor: ' + e.message, 'error');
+        return;
+      }
+
+      setStatusSpinner('Extracting ' + file.name + '\u2026');
+
+      let bytes;
+      try {
+        const buf = await file.arrayBuffer();
+        bytes = new Uint8Array(buf);
+      } catch (e) {
+        setStatus('Failed to read file: ' + e.message, 'error');
+        return;
+      }
+
+      console.log('[godotpcktool] Calling extractPck:', file.name, bytes.length, 'bytes');
+
+      const ptr = Module._malloc(bytes.length);
+      Module.HEAPU8.set(bytes, ptr);
+      const result = Module._extractPck(ptr, bytes.length);
+      Module._free(ptr);
+
+      if (result !== 0) {
+        const err = Module.UTF8ToString(Module._getLastError());
+        console.error('[godotpcktool] extractPck error:', err);
+        setStatus(err, 'error');
+        return;
+      }
+
+      const manifestStr = Module.UTF8ToString(Module._getExtractedFiles());
+      const paths = manifestStr.split('\n').filter(Boolean);
+      console.log('[godotpcktool] Files to zip:', paths.length);
+
+      const zip = new JSZip();
+      for (const relPath of paths) {
+        const data = Module.FS.readFile('/out/' + relPath);
+        zip.file(relPath, data);
+      }
+
+      let blob;
+      try {
+        blob = await zip.generateAsync({ type: 'blob' });
+      } catch (e) {
+        setStatus('Failed to generate zip: ' + e.message, 'error');
+        return;
+      }
+
+      const zipName = file.name.replace(/\.pck$/i, '') + '.zip';
+      console.log('[godotpcktool] Zip ready:', zipName, blob.size, 'bytes');
+
+      const fileWord = paths.length === 1 ? 'file' : 'files';
+      setStatus('Extracted ' + paths.length + ' ' + fileWord + ' from ' + file.name, 'success');
+      showDownload(blob, zipName);
+    }
+
+    // ── Drag-and-drop + click ─────────────────────────────────────────────────
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files[0]) extractAndZip(fileInput.files[0]);
+    });
+
+    dropZone.addEventListener('dragover', e => {
+      e.preventDefault();
+      dropZone.classList.add('drag-over');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('drag-over');
+    });
+
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file) extractAndZip(file);
+    });
+  </script>
+</body>
+</html>
