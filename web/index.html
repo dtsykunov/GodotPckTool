@@ -238,7 +238,6 @@
     const statusEl       = document.getElementById('status');
     const downloadBtn    = document.getElementById('download-btn');
     const listOutput     = document.getElementById('list-output');
-    const fileTableBody  = document.getElementById('file-table-body');
 
     // ── UI helpers ────────────────────────────────────────────────────────────
     // All user-controlled content goes through textContent, never innerHTML.
@@ -285,7 +284,7 @@
       setStatus('', '');
       hideDownload();
       listOutput.style.display  = 'none';
-      fileTableBody.textContent = '';
+      document.getElementById('file-tree').textContent = '';
       selectedPckFile = null;
       selectedAddFile = null;
       addBtn.style.display = 'none';
@@ -410,6 +409,72 @@
     }
 
     // ── Mode: List ────────────────────────────────────────────────────────────
+    // Converts flat ["path\tsize", ...] manifest lines into a nested tree object.
+    // Each node: { type: 'dir'|'file', name: string, children?: {}, size?: number }
+    function buildTree(lines) {
+      const root = { type: 'dir', name: '', children: {} };
+      for (const line of lines) {
+        const tab   = line.indexOf('\t');
+        const path  = tab >= 0 ? line.slice(0, tab) : line;
+        const size  = tab >= 0 ? parseInt(line.slice(tab + 1), 10) : 0;
+        const parts = path.split('/');
+        let node = root;
+        for (let i = 0; i < parts.length - 1; i++) {
+          const part = parts[i];
+          if (!node.children[part]) {
+            node.children[part] = { type: 'dir', name: part, children: {} };
+          }
+          node = node.children[part];
+        }
+        const filename = parts[parts.length - 1];
+        node.children[filename] = { type: 'file', name: filename, size };
+      }
+      return root;
+    }
+
+    // Recursively renders a tree node into a <ul> DOM element.
+    // Directories first (alphabetical), then files (alphabetical).
+    // All directories start collapsed.
+    function renderTree(node) {
+      const ul = document.createElement('ul');
+      const entries = Object.values(node.children);
+      entries.sort((a, b) => {
+        if (a.type !== b.type) return a.type === 'dir' ? -1 : 1;
+        return a.name.localeCompare(b.name);
+      });
+      for (const child of entries) {
+        const li = document.createElement('li');
+        li.className = 'tree-item';
+        if (child.type === 'dir') {
+          li.classList.add('dir', 'collapsed');
+          const dirNameEl = document.createElement('span');
+          dirNameEl.className = 'dir-name';
+          const chevron = document.createElement('span');
+          chevron.className = 'chevron';
+          chevron.textContent = '\u25B6'; // ▶
+          dirNameEl.appendChild(chevron);
+          dirNameEl.appendChild(document.createTextNode(' ' + child.name));
+          dirNameEl.addEventListener('click', () => {
+            li.classList.toggle('collapsed');
+          });
+          li.appendChild(dirNameEl);
+          li.appendChild(renderTree(child));
+        } else {
+          li.classList.add('file');
+          const fileNameEl = document.createElement('span');
+          fileNameEl.className = 'file-name';
+          fileNameEl.textContent = child.name;
+          const fileSizeEl = document.createElement('span');
+          fileSizeEl.className = 'file-size';
+          fileSizeEl.textContent = formatSize(child.size);
+          li.appendChild(fileNameEl);
+          li.appendChild(fileSizeEl);
+        }
+        ul.appendChild(li);
+      }
+      return ul;
+    }
+
     async function listContents(file) {
       if (isProcessing) {
         setStatus('Please wait for the current operation to finish.', 'error');
@@ -419,7 +484,6 @@
       try {
         hideDownload();
         listOutput.style.display  = 'none';
-        fileTableBody.textContent = '';
         setStatusSpinner('Loading extractor\u2026');
 
         let Module;
@@ -458,20 +522,12 @@
         const lines = manifestStr.split('\n').filter(Boolean);
         console.log('[godotpcktool] Listed', lines.length, 'files');
 
-        for (const line of lines) {
-          const tab      = line.indexOf('\t');
-          const path     = tab >= 0 ? line.slice(0, tab) : line;
-          const sizeBytes = tab >= 0 ? parseInt(line.slice(tab + 1), 10) : 0;
-          const tr       = document.createElement('tr');
-          const tdPath   = document.createElement('td');
-          tdPath.textContent = path;
-          const tdSize   = document.createElement('td');
-          tdSize.textContent = formatSize(sizeBytes);
-          tr.appendChild(tdPath);
-          tr.appendChild(tdSize);
-          fileTableBody.appendChild(tr);
-        }
-
+        const tree    = buildTree(lines);
+        const treeEl  = renderTree(tree);
+        treeEl.className = 'tree-list';
+        const container = document.getElementById('file-tree');
+        container.textContent = '';
+        container.appendChild(treeEl);
         listOutput.style.display = 'block';
         const word = lines.length === 1 ? 'file' : 'files';
         setStatus(lines.length + ' ' + word + ' in ' + file.name, 'success');
