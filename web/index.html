@@ -6,141 +6,216 @@
   <title>Godot PCK Tool</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: system-ui, sans-serif;
-      background: #1a1a2e;
-      color: #e0e0e0;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f0f2f5;
+      color: #111;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 2rem;
-    }
-    h1 { font-size: 1.6rem; margin-bottom: 0.4rem; color: #fff; }
-    p.subtitle { color: #aaa; margin-bottom: 1.5rem; font-size: 0.95rem; text-align: center; }
-
-    .mode-bar {
-      width: 100%; max-width: 480px;
-      margin-bottom: 0.75rem;
-      display: flex; align-items: center; gap: 0.5rem;
-    }
-    .mode-bar label { color: #aaa; font-size: 0.9rem; white-space: nowrap; }
-    .mode-bar select {
-      background: #16213e; color: #e0e0e0;
-      border: 1px solid #4a90d9; border-radius: 6px;
-      padding: 0.35rem 0.6rem; font-size: 0.9rem;
-      cursor: pointer; flex: 1;
+      padding: 1.5rem 1rem 3rem;
     }
 
-    #mode-desc {
-      color: #bbb; font-size: 0.88rem; line-height: 1.55;
+    header {
+      text-align: center;
       margin-bottom: 1.25rem;
-      width: 100%; max-width: 480px; text-align: center;
+      padding-top: 0.5rem;
+    }
+    h1 { font-size: 1.35rem; font-weight: 700; }
+    .subtitle { color: #666; font-size: 0.85rem; margin-top: 0.2rem; }
+
+    /* ── Card ── */
+    .card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 1.25rem;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08), 0 6px 16px rgba(0,0,0,0.05);
     }
 
-    #drop-zone {
-      border: 2px dashed #4a90d9; border-radius: 12px;
-      padding: 3rem 4rem; text-align: center; cursor: pointer;
-      transition: background 0.2s, border-color 0.2s;
-      width: 100%; max-width: 480px;
+    /* ── Tabs ── */
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 3px;
+      background: #f0f2f5;
+      border-radius: 8px;
+      padding: 3px;
+      margin-bottom: 1rem;
     }
-    #drop-zone.drag-over { background: #1e3a5f; border-color: #7ab8f5; }
-    #drop-zone p { color: #aaa; margin-top: 0.5rem; font-size: 0.9rem; }
+    .tab {
+      padding: 0.45rem 0.2rem;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: #666;
+      font-size: 0.78rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+    }
+    .tab:hover { background: #e4e7ec; color: #111; }
+    .tab.active {
+      background: #fff;
+      color: #2563eb;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    }
+
+    /* ── Mode description ── */
+    #mode-desc {
+      font-size: 0.83rem;
+      color: #666;
+      line-height: 1.5;
+      margin-bottom: 1rem;
+    }
+
+    /* ── Drop zone ── */
+    #drop-zone {
+      border: 2px dashed #cbd5e1;
+      border-radius: 10px;
+      padding: 1.75rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      user-select: none;
+    }
+    #drop-zone:hover, #drop-zone.drag-over {
+      border-color: #2563eb;
+      background: #eff6ff;
+    }
+    #drop-zone svg { color: #94a3b8; margin-bottom: 0.4rem; }
+    #drop-zone p { color: #64748b; font-size: 0.88rem; }
     #file-input { display: none; }
 
-    .extra-controls { width: 100%; max-width: 480px; margin-top: 1rem; }
-    .form-row { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.75rem; }
-    .form-row label { color: #aaa; font-size: 0.85rem; }
-    .form-row .hint { color: #555; font-size: 0.8rem; }
+    /* ── Form inputs ── */
+    .form-row { margin-top: 0.75rem; }
+    .form-row label {
+      display: block;
+      font-size: 0.8rem;
+      color: #555;
+      margin-bottom: 0.25rem;
+    }
+    .hint { color: #9ca3af; font-size: 0.75rem; }
     .form-row input[type="text"] {
-      background: #16213e; color: #e0e0e0;
-      border: 1px solid #4a90d9; border-radius: 6px;
-      padding: 0.45rem 0.6rem; font-size: 0.9rem;
-      font-family: monospace; width: 100%;
+      width: 100%;
+      padding: 0.45rem 0.6rem;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      font-family: monospace;
+      background: #f9fafb;
+      color: #111;
     }
-    .form-row input[type="text"]::placeholder { color: #444; }
+    .form-row input[type="text"]:focus {
+      outline: none;
+      border-color: #2563eb;
+      background: #fff;
+    }
 
+    /* ── Add file zone ── */
     #add-file-zone {
-      border: 2px dashed #5a7a9d; border-radius: 10px;
-      padding: 1.5rem; text-align: center; cursor: pointer;
-      transition: background 0.2s, border-color 0.2s;
-      margin-bottom: 0.75rem; color: #aaa; font-size: 0.9rem;
+      margin-top: 0.75rem;
+      border: 2px dashed #cbd5e1;
+      border-radius: 8px;
+      padding: 1rem;
+      text-align: center;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: #64748b;
+      transition: border-color 0.15s, background 0.15s;
     }
-    #add-file-zone.drag-over { background: #1e3a5f; border-color: #7ab8f5; }
+    #add-file-zone:hover, #add-file-zone.drag-over {
+      border-color: #2563eb;
+      background: #eff6ff;
+    }
     #add-file-input { display: none; }
 
+    /* ── Buttons ── */
     #add-btn {
-      width: 100%; padding: 0.6rem;
-      background: #2a6099; color: #fff;
-      border: none; border-radius: 8px;
-      font-size: 0.95rem; cursor: pointer; margin-top: 0.25rem;
+      margin-top: 0.75rem;
+      width: 100%;
+      padding: 0.6rem;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.92rem;
+      font-weight: 500;
+      cursor: pointer;
     }
-    #add-btn:hover { background: #357abd; }
-
-    #status {
-      margin-top: 1.5rem; min-height: 2rem;
-      text-align: center; font-size: 0.95rem;
-      width: 100%; max-width: 480px;
-    }
-    #status.error   { color: #ff6b6b; }
-    #status.success { color: #6bffb8; }
+    #add-btn:hover { background: #1d4ed8; }
 
     #download-btn {
-      display: none; margin-top: 1rem;
-      padding: 0.7rem 2rem; background: #4a90d9; color: #fff;
-      border: none; border-radius: 8px; font-size: 1rem;
-      cursor: pointer; text-decoration: none;
+      display: none;
+      margin-top: 0.75rem;
+      padding: 0.6rem 1.5rem;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.92rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      text-align: center;
+      width: 100%;
     }
-    #download-btn:hover { background: #357abd; }
+    #download-btn:hover { background: #1d4ed8; }
 
-    #list-output { margin-top: 1.5rem; width: 100%; max-width: 700px; }
+    /* ── Status ── */
+    #status {
+      margin-top: 0.9rem;
+      font-size: 0.88rem;
+      text-align: center;
+      min-height: 1.4rem;
+    }
+    #status.error   { color: #dc2626; }
+    #status.success { color: #16a34a; }
 
+    /* ── File tree ── */
+    #list-output {
+      margin-top: 1rem;
+      width: 100%;
+      max-width: 480px;
+      background: #fff;
+      border-radius: 14px;
+      padding: 1rem 1.25rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08), 0 6px 16px rgba(0,0,0,0.05);
+    }
     .tree-list {
       list-style: none;
       padding-left: 0;
       font-family: monospace;
-      font-size: 0.88rem;
+      font-size: 0.85rem;
     }
     .tree-list ul {
       list-style: none;
-      padding-left: 1.25rem;
-      border-left: 1px solid #2a4060;
-      margin-left: 0.4rem;
+      padding-left: 1.2rem;
+      border-left: 1px solid #e2e8f0;
+      margin-left: 0.3rem;
     }
-    .tree-item { padding: 0.2rem 0; }
-
-    .dir-name {
-      cursor: pointer;
-      color: #7ab8f5;
-      user-select: none;
-    }
-    .dir-name:hover { color: #aad4ff; }
-
+    .tree-item { padding: 0.15rem 0; }
+    .dir-name { cursor: pointer; color: #2563eb; user-select: none; }
+    .dir-name:hover { color: #1d4ed8; }
     .chevron {
       display: inline-block;
-      font-size: 0.7em;
+      font-size: 0.65em;
       transform: rotate(90deg);
       transition: transform 0.15s ease;
       margin-right: 0.3em;
     }
-    .dir.collapsed > .dir-name .chevron {
-      transform: rotate(0deg);
-    }
-    .dir.collapsed > ul {
-      display: none;
-    }
+    .dir.collapsed > .dir-name .chevron { transform: rotate(0deg); }
+    .dir.collapsed > ul { display: none; }
+    .file-name { color: #374151; }
+    .file-size { color: #9ca3af; font-size: 0.8em; margin-left: 0.4em; }
 
-    .file-name { color: #e0e0e0; }
-    .file-size {
-      color: #666;
-      font-size: 0.8em;
-      margin-left: 0.5em;
-    }
-
+    /* ── Spinner ── */
     .spinner {
       display: inline-block; width: 1em; height: 1em;
-      border: 2px solid #4a90d9; border-top-color: transparent;
+      border: 2px solid #2563eb; border-top-color: transparent;
       border-radius: 50%; animation: spin 0.7s linear infinite;
       vertical-align: middle; margin-right: 0.4em;
     }
@@ -148,59 +223,60 @@
   </style>
 </head>
 <body>
-  <h1>Godot PCK Tool</h1>
-  <p class="subtitle">Inspect, extract, repack, or modify Godot <code>.pck</code> archives — entirely in your browser, no server required</p>
+  <header>
+    <h1>Godot PCK Tool</h1>
+    <p class="subtitle">Inspect, extract, repack, or modify <code>.pck</code> archives — in your browser</p>
+  </header>
 
-  <div class="mode-bar">
-    <label for="mode-select">Mode:</label>
-    <select id="mode-select">
-      <option value="extract">Extract → .zip</option>
-      <option value="list">List contents</option>
-      <option value="repack">Repack (filter)</option>
-      <option value="add">Add file</option>
-    </select>
-  </div>
-
-  <p id="mode-desc"></p>
-
-  <div id="drop-zone">
-    <svg width="48" height="48" fill="none" stroke="#4a90d9" stroke-width="2"
-         viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-      <polyline points="17 8 12 3 7 8"/>
-      <line x1="12" y1="3" x2="12" y2="15"/>
-    </svg>
-    <p>Drag &amp; drop a .pck file here, or click to select</p>
-    <input type="file" id="file-input" accept=".pck">
-  </div>
-
-  <!-- Repack mode controls -->
-  <div id="repack-controls" class="extra-controls" style="display:none">
-    <div class="form-row">
-      <label for="include-regex">Include regex <span class="hint">(empty = include all files)</span></label>
-      <input type="text" id="include-regex" placeholder="e.g. \.png$">
+  <div class="card">
+    <div class="tabs" role="tablist">
+      <button class="tab active" role="tab" data-mode="extract">Extract</button>
+      <button class="tab"        role="tab" data-mode="list">List</button>
+      <button class="tab"        role="tab" data-mode="repack">Repack</button>
+      <button class="tab"        role="tab" data-mode="add">Add file</button>
     </div>
-    <div class="form-row">
-      <label for="exclude-regex">Exclude regex <span class="hint">(empty = exclude nothing)</span></label>
-      <input type="text" id="exclude-regex" placeholder="e.g. \.import$">
-    </div>
-  </div>
 
-  <!-- Add mode controls -->
-  <div id="add-controls" class="extra-controls" style="display:none">
-    <div id="add-file-zone">
-      Drop the file to add here, or click to select
-      <input type="file" id="add-file-input">
-    </div>
-    <div class="form-row">
-      <label for="pck-path">Destination path inside the PCK</label>
-      <input type="text" id="pck-path" placeholder="res://filename.png">
-    </div>
-    <button id="add-btn" style="display:none">Add to PCK</button>
-  </div>
+    <p id="mode-desc"></p>
 
-  <div id="status"></div>
-  <a id="download-btn" style="display:none">Download</a>
+    <div id="drop-zone">
+      <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2"
+           viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+      <p>Choose .pck file</p>
+      <input type="file" id="file-input" accept=".pck">
+    </div>
+
+    <!-- Repack mode controls -->
+    <div id="repack-controls" style="display:none">
+      <div class="form-row">
+        <label for="include-regex">Include regex <span class="hint">(empty = include all files)</span></label>
+        <input type="text" id="include-regex" placeholder="e.g. \.png$">
+      </div>
+      <div class="form-row">
+        <label for="exclude-regex">Exclude regex <span class="hint">(empty = exclude nothing)</span></label>
+        <input type="text" id="exclude-regex" placeholder="e.g. \.import$">
+      </div>
+    </div>
+
+    <!-- Add mode controls -->
+    <div id="add-controls" style="display:none">
+      <div id="add-file-zone">
+        Choose file to add
+        <input type="file" id="add-file-input">
+      </div>
+      <div class="form-row">
+        <label for="pck-path">Destination path inside the PCK</label>
+        <input type="text" id="pck-path" placeholder="res://filename.png">
+      </div>
+      <button id="add-btn" style="display:none">Add to PCK</button>
+    </div>
+
+    <div id="status"></div>
+    <a id="download-btn" style="display:none">Download</a>
+  </div>
 
   <!-- List mode output -->
   <div id="list-output" style="display:none">
@@ -213,23 +289,26 @@
       extract: 'Drop a .pck file to extract all its contents and download them as a .zip archive.',
       list:    'Drop a .pck file to inspect its contents. A collapsible file tree will appear below — nothing is downloaded.',
       repack:  'Drop a .pck file to repack it, optionally filtering files by regex. Leave both fields empty to repack as-is. The result downloads as a new .pck file.',
-      add:     'Drop a .pck file above, then select the file to add using the picker below. Set its destination path inside the archive (e.g. res://sprites/hero.png) and click "Add to PCK". The modified .pck downloads.'
+      add:     'Drop a .pck file above, then choose the file to add below. Set its destination path inside the archive (e.g. res://sprites/hero.png) and click "Add to PCK". The modified .pck downloads.'
     };
 
-    // ── State ────────────────────────────────────────────────────────────────
-    let wasmModule    = null;   // cached Emscripten module instance
-    let jszipLib      = null;   // cached JSZip class
-    let activeBlobUrl = null;   // tracked so it can be revoked on next download
-    let isProcessing  = false;  // guard against concurrent operations
-    let selectedPckFile  = null; // add mode: the .pck to modify
-    let selectedAddFile  = null; // add mode: the file to insert
+    // ── State ─────────────────────────────────────────────────────────────────
+    let wasmModule      = null;  // cached Emscripten module instance
+    let jszipLib        = null;  // cached JSZip class
+    let activeBlobUrl   = null;  // tracked so it can be revoked on next download
+    let isProcessing    = false; // guard against concurrent operations
+    let selectedPckFile = null;  // add mode: the .pck to modify
+    let selectedAddFile = null;  // add mode: the file to insert
+    let activeMode      = 'extract';
 
     // ── DOM refs ──────────────────────────────────────────────────────────────
-    const modeSelect     = document.getElementById('mode-select');
+    const tabs           = document.querySelectorAll('.tab');
     const modeDesc       = document.getElementById('mode-desc');
     const dropZone       = document.getElementById('drop-zone');
     const fileInput      = document.getElementById('file-input');
     const repackControls = document.getElementById('repack-controls');
+    const includeRegex   = document.getElementById('include-regex');
+    const excludeRegex   = document.getElementById('exclude-regex');
     const addControls    = document.getElementById('add-controls');
     const addFileZone    = document.getElementById('add-file-zone');
     const addFileInput   = document.getElementById('add-file-input');
@@ -259,9 +338,9 @@
 
     function showDownload(blob, filename) {
       if (activeBlobUrl) URL.revokeObjectURL(activeBlobUrl);
-      activeBlobUrl        = URL.createObjectURL(blob);
-      downloadBtn.href     = activeBlobUrl;
-      downloadBtn.download = filename;
+      activeBlobUrl           = URL.createObjectURL(blob);
+      downloadBtn.href        = activeBlobUrl;
+      downloadBtn.download    = filename;
       downloadBtn.textContent = 'Download ' + filename;
       downloadBtn.style.display = 'inline-block';
     }
@@ -279,28 +358,30 @@
 
     // ── Mode switching ────────────────────────────────────────────────────────
     function switchMode(mode) {
+      activeMode = mode;
+      tabs.forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
       modeDesc.textContent = MODE_DESCS[mode] || '';
       repackControls.style.display = mode === 'repack' ? 'block' : 'none';
       addControls.style.display    = mode === 'add'    ? 'block' : 'none';
       setStatus('', '');
       hideDownload();
-      listOutput.style.display  = 'none';
-      fileTree.textContent = '';
+      listOutput.style.display = 'none';
+      fileTree.textContent     = '';
       selectedPckFile = null;
       selectedAddFile = null;
       addBtn.style.display = 'none';
       pckPathInput.value   = '';
     }
 
-    modeSelect.addEventListener('change', () => switchMode(modeSelect.value));
+    tabs.forEach(t => t.addEventListener('click', () => switchMode(t.dataset.mode)));
     switchMode('extract'); // initialise description text
 
     // ── Lazy loaders ──────────────────────────────────────────────────────────
     function loadScript(src) {
       return new Promise((resolve, reject) => {
         const s = document.createElement('script');
-        s.src    = src;
-        s.onload = resolve;
+        s.src     = src;
+        s.onload  = resolve;
         s.onerror = () => reject(new Error('Failed to load script: ' + src));
         document.head.appendChild(s);
       });
@@ -398,10 +479,9 @@
           return;
         }
 
-        const zipName = file.name.replace(/\.pck$/i, '') + '.zip';
-        console.log('[godotpcktool] Zip ready:', zipName, blob.size, 'bytes');
-
+        const zipName  = file.name.replace(/\.pck$/i, '') + '.zip';
         const fileWord = paths.length === 1 ? 'file' : 'files';
+        console.log('[godotpcktool] Zip ready:', zipName, blob.size, 'bytes');
         setStatus('Extracted ' + paths.length + ' ' + fileWord + ' from ' + file.name, 'success');
         showDownload(blob, zipName);
       } finally {
@@ -437,7 +517,7 @@
     // Directories first (alphabetical), then files (alphabetical).
     // All directories start collapsed.
     function renderTree(node) {
-      const ul = document.createElement('ul');
+      const ul      = document.createElement('ul');
       const entries = Object.values(node.children);
       entries.sort((a, b) => {
         if (a.type !== b.type) return a.type === 'dir' ? -1 : 1;
@@ -451,22 +531,20 @@
           const dirNameEl = document.createElement('span');
           dirNameEl.className = 'dir-name';
           const chevron = document.createElement('span');
-          chevron.className = 'chevron';
+          chevron.className   = 'chevron';
           chevron.textContent = '\u25B6'; // ▶
           dirNameEl.appendChild(chevron);
           dirNameEl.appendChild(document.createTextNode(' ' + child.name));
-          dirNameEl.addEventListener('click', () => {
-            li.classList.toggle('collapsed');
-          });
+          dirNameEl.addEventListener('click', () => li.classList.toggle('collapsed'));
           li.appendChild(dirNameEl);
           li.appendChild(renderTree(child));
         } else {
           li.classList.add('file');
           const fileNameEl = document.createElement('span');
-          fileNameEl.className = 'file-name';
+          fileNameEl.className   = 'file-name';
           fileNameEl.textContent = child.name;
           const fileSizeEl = document.createElement('span');
-          fileSizeEl.className = 'file-size';
+          fileSizeEl.className   = 'file-size';
           fileSizeEl.textContent = formatSize(child.size);
           li.appendChild(fileNameEl);
           li.appendChild(fileSizeEl);
@@ -484,7 +562,7 @@
       isProcessing = true;
       try {
         hideDownload();
-        listOutput.style.display  = 'none';
+        listOutput.style.display = 'none';
         setStatusSpinner('Loading extractor\u2026');
 
         let Module;
@@ -520,12 +598,11 @@
         }
 
         const manifestStr = Module.UTF8ToString(resultPtr);
-        const lines = manifestStr.split('\n').filter(Boolean);
+        const lines       = manifestStr.split('\n').filter(Boolean);
         console.log('[godotpcktool] Listed', lines.length, 'files');
 
-        const tree    = buildTree(lines);
-        const treeEl  = renderTree(tree);
-        treeEl.className = 'tree-list';
+        const treeEl = renderTree(buildTree(lines));
+        treeEl.className    = 'tree-list';
         fileTree.textContent = '';
         fileTree.appendChild(treeEl);
         listOutput.style.display = 'block';
@@ -555,9 +632,8 @@
           return;
         }
 
-        const includeRe = document.getElementById('include-regex').value.trim();
-        const excludeRe = document.getElementById('exclude-regex').value.trim();
-
+        const incRe = includeRegex.value.trim();
+        const excRe = excludeRegex.value.trim();
         setStatusSpinner('Repacking ' + file.name + '\u2026');
 
         let bytes;
@@ -569,12 +645,12 @@
         }
 
         console.log('[godotpcktool] Calling repackPck:', file.name, bytes.length, 'bytes',
-          'include:', includeRe || '(none)', 'exclude:', excludeRe || '(none)');
+          'include:', incRe || '(none)', 'exclude:', excRe || '(none)');
 
         const ptr    = Module._malloc(bytes.length);
         Module.HEAPU8.set(bytes, ptr);
-        const incPtr = allocString(Module, includeRe);
-        const excPtr = allocString(Module, excludeRe);
+        const incPtr = allocString(Module, incRe);
+        const excPtr = allocString(Module, excRe);
         const result = Module._repackPck(ptr, bytes.length, incPtr, excPtr);
         Module._free(ptr);
         Module._free(incPtr);
@@ -604,7 +680,7 @@
         setStatus('Drop a .pck file in the zone above to get started.', '');
         addBtn.style.display = 'none';
       } else if (!selectedAddFile) {
-        setStatus('PCK ready: ' + selectedPckFile.name + '. Now drop the file to add below.', '');
+        setStatus('PCK ready: ' + selectedPckFile.name + '. Now choose the file to add below.', '');
         addBtn.style.display = 'none';
       } else {
         setStatus('Ready: add ' + selectedAddFile.name + ' into ' + selectedPckFile.name, 'success');
@@ -640,9 +716,7 @@
           return;
         }
 
-        setStatusSpinner(
-          'Adding ' + selectedAddFile.name + ' to ' + selectedPckFile.name + '\u2026'
-        );
+        setStatusSpinner('Adding ' + selectedAddFile.name + ' to ' + selectedPckFile.name + '\u2026');
 
         let pckBytes, fileBytes;
         try {
@@ -664,9 +738,7 @@
         const filePtr = Module._malloc(fileBytes.length);
         Module.HEAPU8.set(fileBytes, filePtr);
         const pathPtr = allocString(Module, pckPath);
-        const result  = Module._addToPck(
-          pckPtr, pckBytes.length, filePtr, fileBytes.length, pathPtr
-        );
+        const result  = Module._addToPck(pckPtr, pckBytes.length, filePtr, fileBytes.length, pathPtr);
         Module._free(pckPtr);
         Module._free(filePtr);
         Module._free(pathPtr);
@@ -704,9 +776,7 @@
       e.preventDefault();
       addFileZone.classList.add('drag-over');
     });
-    addFileZone.addEventListener('dragleave', () => {
-      addFileZone.classList.remove('drag-over');
-    });
+    addFileZone.addEventListener('dragleave', () => addFileZone.classList.remove('drag-over'));
     addFileZone.addEventListener('drop', e => {
       e.preventDefault();
       addFileZone.classList.remove('drag-over');
@@ -717,13 +787,12 @@
       updateAddStatus();
     });
 
-    // ── Main PCK drop zone + file input ──────────────────────────────────────
+    // ── Main PCK drop zone ────────────────────────────────────────────────────
     function handlePckFile(file) {
-      const mode = modeSelect.value;
-      if      (mode === 'extract') extractAndZip(file);
-      else if (mode === 'list')    listContents(file);
-      else if (mode === 'repack')  repackFile(file);
-      else if (mode === 'add') {
+      if      (activeMode === 'extract') extractAndZip(file);
+      else if (activeMode === 'list')    listContents(file);
+      else if (activeMode === 'repack')  repackFile(file);
+      else if (activeMode === 'add') {
         selectedPckFile = file;
         updateAddStatus();
       }
@@ -737,9 +806,7 @@
       e.preventDefault();
       dropZone.classList.add('drag-over');
     });
-    dropZone.addEventListener('dragleave', () => {
-      dropZone.classList.remove('drag-over');
-    });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
     dropZone.addEventListener('drop', e => {
       e.preventDefault();
       dropZone.classList.remove('drag-over');
