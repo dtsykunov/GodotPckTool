@@ -238,6 +238,7 @@
     const statusEl       = document.getElementById('status');
     const downloadBtn    = document.getElementById('download-btn');
     const listOutput     = document.getElementById('list-output');
+    const fileTree       = document.getElementById('file-tree');
 
     // ── UI helpers ────────────────────────────────────────────────────────────
     // All user-controlled content goes through textContent, never innerHTML.
@@ -284,7 +285,7 @@
       setStatus('', '');
       hideDownload();
       listOutput.style.display  = 'none';
-      document.getElementById('file-tree').textContent = '';
+      fileTree.textContent = '';
       selectedPckFile = null;
       selectedAddFile = null;
       addBtn.style.display = 'none';
@@ -416,7 +417,7 @@
       for (const line of lines) {
         const tab   = line.indexOf('\t');
         const path  = tab >= 0 ? line.slice(0, tab) : line;
-        const size  = tab >= 0 ? parseInt(line.slice(tab + 1), 10) : 0;
+        const size  = tab >= 0 ? (parseInt(line.slice(tab + 1), 10) || 0) : 0;
         const parts = path.split('/');
         let node = root;
         for (let i = 0; i < parts.length - 1; i++) {
@@ -525,9 +526,8 @@
         const tree    = buildTree(lines);
         const treeEl  = renderTree(tree);
         treeEl.className = 'tree-list';
-        const container = document.getElementById('file-tree');
-        container.textContent = '';
-        container.appendChild(treeEl);
+        fileTree.textContent = '';
+        fileTree.appendChild(treeEl);
         listOutput.style.display = 'block';
         const word = lines.length === 1 ? 'file' : 'files';
         setStatus(lines.length + ' ' + word + ' in ' + file.name, 'success');
