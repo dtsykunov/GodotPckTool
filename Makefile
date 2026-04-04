@@ -82,6 +82,15 @@ install-podman: compile-podman install
 
 # Utilities
 clean: remove-podman-image
-	rm -rf build build-cross build-podman install
+	rm -rf build build-cross build-podman build-wasm install
 
 .PHONY: clean
+
+# WASM / browser build (requires Emscripten: nix develop or emsdk)
+compile-wasm:
+	emcmake cmake -B build-wasm web/ && cmake --build build-wasm
+
+install-wasm: compile-wasm
+	cp build-wasm/godotpcktool.js build-wasm/godotpcktool.wasm web/
+
+.PHONY: compile-wasm install-wasm
