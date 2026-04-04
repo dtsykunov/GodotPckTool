@@ -51,6 +51,11 @@ int extractPck(const uint8_t* data, std::size_t len)
             return 1;
         }
         f.write(reinterpret_cast<const char*>(data), static_cast<std::streamsize>(len));
+        if(!f.good()) {
+            s_lastError = "Failed to write input data to virtual filesystem";
+            fprintf(stderr, "[godotpcktool] ERROR: %s\n", s_lastError.c_str());
+            return 1;
+        }
     }
     fprintf(stderr, "[godotpcktool] Written to /input.pck\n");
 
