@@ -88,8 +88,10 @@
 
   <script>
     // ── State ────────────────────────────────────────────────────────────────
-    let wasmModule = null;  // cached Emscripten module instance
-    let jszipLib   = null;  // cached JSZip class
+    let wasmModule   = null;  // cached Emscripten module instance
+    let jszipLib     = null;  // cached JSZip class
+    let activeBlobUrl = null; // tracked so it can be revoked on next extraction
+    let isExtracting = false; // guard flag to prevent concurrent extractions
 
     // ── UI helpers ───────────────────────────────────────────────────────────
     const dropZone    = document.getElementById('drop-zone');
@@ -115,8 +117,11 @@
     }
 
     function showDownload(blob, filename) {
-      const url = URL.createObjectURL(blob);
-      downloadBtn.href = url;
+      if (activeBlobUrl) {
+        URL.revokeObjectURL(activeBlobUrl);
+      }
+      activeBlobUrl = URL.createObjectURL(blob);
+      downloadBtn.href = activeBlobUrl;
       downloadBtn.download = filename;
       downloadBtn.style.display = 'inline-block';
     }
@@ -160,67 +165,76 @@
 
     // ── Core extraction logic ─────────────────────────────────────────────────
     async function extractAndZip(file) {
-      hideDownload();
-      setStatusSpinner('Loading extractor\u2026');
-
-      let Module, JSZip;
+      if (isExtracting) {
+        setStatus('Please wait for the current extraction to finish.', 'error');
+        return;
+      }
+      isExtracting = true;
       try {
-        [Module, JSZip] = await Promise.all([getWasmModule(), getJSZip()]);
-      } catch (e) {
-        console.error('[godotpcktool] Load error:', e);
-        setStatus('Failed to load extractor: ' + e.message, 'error');
-        return;
+        hideDownload();
+        setStatusSpinner('Loading extractor\u2026');
+
+        let Module, JSZip;
+        try {
+          [Module, JSZip] = await Promise.all([getWasmModule(), getJSZip()]);
+        } catch (e) {
+          console.error('[godotpcktool] Load error:', e);
+          setStatus('Failed to load extractor: ' + e.message, 'error');
+          return;
+        }
+
+        setStatusSpinner('Extracting ' + file.name + '\u2026');
+
+        let bytes;
+        try {
+          const buf = await file.arrayBuffer();
+          bytes = new Uint8Array(buf);
+        } catch (e) {
+          setStatus('Failed to read file: ' + e.message, 'error');
+          return;
+        }
+
+        console.log('[godotpcktool] Calling extractPck:', file.name, bytes.length, 'bytes');
+
+        const ptr = Module._malloc(bytes.length);
+        Module.HEAPU8.set(bytes, ptr);
+        const result = Module._extractPck(ptr, bytes.length);
+        Module._free(ptr);
+
+        if (result !== 0) {
+          const err = Module.UTF8ToString(Module._getLastError());
+          console.error('[godotpcktool] extractPck error:', err);
+          setStatus(err, 'error');
+          return;
+        }
+
+        const manifestStr = Module.UTF8ToString(Module._getExtractedFiles());
+        const paths = manifestStr.split('\n').filter(Boolean);
+        console.log('[godotpcktool] Files to zip:', paths.length);
+
+        const zip = new JSZip();
+        for (const relPath of paths) {
+          const data = Module.FS.readFile('/out/' + relPath);
+          zip.file(relPath, data);
+        }
+
+        let blob;
+        try {
+          blob = await zip.generateAsync({ type: 'blob' });
+        } catch (e) {
+          setStatus('Failed to generate zip: ' + e.message, 'error');
+          return;
+        }
+
+        const zipName = file.name.replace(/\.pck$/i, '') + '.zip';
+        console.log('[godotpcktool] Zip ready:', zipName, blob.size, 'bytes');
+
+        const fileWord = paths.length === 1 ? 'file' : 'files';
+        setStatus('Extracted ' + paths.length + ' ' + fileWord + ' from ' + file.name, 'success');
+        showDownload(blob, zipName);
+      } finally {
+        isExtracting = false;
       }
-
-      setStatusSpinner('Extracting ' + file.name + '\u2026');
-
-      let bytes;
-      try {
-        const buf = await file.arrayBuffer();
-        bytes = new Uint8Array(buf);
-      } catch (e) {
-        setStatus('Failed to read file: ' + e.message, 'error');
-        return;
-      }
-
-      console.log('[godotpcktool] Calling extractPck:', file.name, bytes.length, 'bytes');
-
-      const ptr = Module._malloc(bytes.length);
-      Module.HEAPU8.set(bytes, ptr);
-      const result = Module._extractPck(ptr, bytes.length);
-      Module._free(ptr);
-
-      if (result !== 0) {
-        const err = Module.UTF8ToString(Module._getLastError());
-        console.error('[godotpcktool] extractPck error:', err);
-        setStatus(err, 'error');
-        return;
-      }
-
-      const manifestStr = Module.UTF8ToString(Module._getExtractedFiles());
-      const paths = manifestStr.split('\n').filter(Boolean);
-      console.log('[godotpcktool] Files to zip:', paths.length);
-
-      const zip = new JSZip();
-      for (const relPath of paths) {
-        const data = Module.FS.readFile('/out/' + relPath);
-        zip.file(relPath, data);
-      }
-
-      let blob;
-      try {
-        blob = await zip.generateAsync({ type: 'blob' });
-      } catch (e) {
-        setStatus('Failed to generate zip: ' + e.message, 'error');
-        return;
-      }
-
-      const zipName = file.name.replace(/\.pck$/i, '') + '.zip';
-      console.log('[godotpcktool] Zip ready:', zipName, blob.size, 'bytes');
-
-      const fileWord = paths.length === 1 ? 'file' : 'files';
-      setStatus('Extracted ' + paths.length + ' ' + fileWord + ' from ' + file.name, 'success');
-      showDownload(blob, zipName);
     }
 
     // ── Drag-and-drop + click ─────────────────────────────────────────────────
