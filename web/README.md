@@ -11,7 +11,8 @@ The original directory structure inside the PCK is preserved.
 
 ### List contents
 Drop a `.pck` file to inspect what is inside it. A table showing each file path and
-its size appears in the page — nothing is downloaded.
+its size appears in the page — nothing is downloaded. File sizes shown reflect the
+extracted (uncompressed) size, not the compressed size stored in the archive.
 
 ### Repack (filter)
 Drop a `.pck` file to repack it. Optionally filter which files are included using

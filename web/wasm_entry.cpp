@@ -138,6 +138,9 @@ const char* listPck(const uint8_t* data, std::size_t len)
     fprintf(stderr, "[godotpcktool] listPck: Godot %s, format version %u\n",
         pck.GetGodotVersion().c_str(), pck.GetFormatVersion());
 
+    // Extract to MEMFS so we can read file sizes from disk.
+    // Note: this extracts all file *data* into browser RAM — large archives are RAM-intensive.
+    // A future improvement could read sizes from the PCK directory index without extracting.
     if(!pck.Extract("/out/", false)) {
         s_lastError = "Extraction failed. The PCK may be encrypted or contain unsupported data.";
         fprintf(stderr, "[godotpcktool] ERROR: Extract() failed\n");
