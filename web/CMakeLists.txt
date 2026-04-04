@@ -14,6 +14,7 @@ configure_file("../src/Include.h.in" "${PROJECT_BINARY_DIR}/Include.h")
 # Global includes needed by src/ (mirrors root CMakeLists.txt include_directories)
 include_directories(${PROJECT_BINARY_DIR})
 include_directories(../src)
+include_directories(../third_party/cxxopts/include)
 include_directories(../third_party/json/single_include)
 
 set(BUILD_SHARED_LIBS OFF)
