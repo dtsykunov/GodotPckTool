@@ -15,16 +15,20 @@ static std::string s_lastError;
 // Walk dir recursively, appending relative paths to out.
 static void walkDir(const std::filesystem::path& dir, std::size_t rootLen, std::string& out)
 {
-    for(const auto& entry : std::filesystem::recursive_directory_iterator(dir)) {
-        if(!entry.is_regular_file())
-            continue;
-        std::string full = entry.path().string();
-        std::string rel  = full.substr(rootLen);
-        if(!rel.empty() && rel.front() == '/')
-            rel.erase(rel.begin());
-        if(!out.empty())
-            out += '\n';
-        out += rel;
+    try {
+        for(const auto& entry : std::filesystem::recursive_directory_iterator(dir)) {
+            if(!entry.is_regular_file())
+                continue;
+            std::string full = entry.path().string();
+            std::string rel  = full.substr(rootLen);
+            if(!rel.empty() && rel.front() == '/')
+                rel.erase(rel.begin());
+            if(!out.empty())
+                out += '\n';
+            out += rel;
+        }
+    } catch(const std::filesystem::filesystem_error& e) {
+        fprintf(stderr, "[godotpcktool] walkDir error: %s\n", e.what());
     }
 }
 
@@ -70,7 +74,7 @@ int extractPck(const uint8_t* data, std::size_t len)
         fprintf(stderr, "[godotpcktool] ERROR: Load() failed\n");
         return 2;
     }
-    fprintf(stderr, "[godotpcktool] Loaded: Godot %s, format version %u\n",
+    fprintf(stderr, "[godotpcktool] extractPck: Godot %s, format version %u\n",
         pck.GetGodotVersion().c_str(), pck.GetFormatVersion());
 
     if(!pck.Extract("/out/", false)) {
@@ -106,7 +110,8 @@ const char* getLastError()
     return s_lastError.c_str();
 }
 
-// Returns newline-separated "path\tsize_in_bytes" manifest, or nullptr on error.
+// Returns newline-separated "path\textracted_size_in_bytes" manifest, or nullptr on error.
+// Sizes reflect the extracted (uncompressed) file sizes, not the packed sizes.
 const char* listPck(const uint8_t* data, std::size_t len)
 {
     s_manifest.clear();
@@ -139,18 +144,24 @@ const char* listPck(const uint8_t* data, std::size_t len)
         return nullptr;
     }
 
-    std::string root("/out/");
-    for(const auto& entry : std::filesystem::recursive_directory_iterator(root)) {
-        if(!entry.is_regular_file())
-            continue;
-        std::string full = entry.path().string();
-        std::string rel  = full.substr(root.size());
-        if(!rel.empty() && rel.front() == '/')
-            rel.erase(rel.begin());
-        const auto sz = static_cast<uint64_t>(entry.file_size());
-        if(!s_manifest.empty())
-            s_manifest += '\n';
-        s_manifest += rel + '\t' + std::to_string(sz);
+    try {
+        std::string root("/out/");
+        for(const auto& entry : std::filesystem::recursive_directory_iterator(root)) {
+            if(!entry.is_regular_file())
+                continue;
+            std::string full = entry.path().string();
+            std::string rel  = full.substr(root.size());
+            if(!rel.empty() && rel.front() == '/')
+                rel.erase(rel.begin());
+            uint64_t sz = 0;
+            try { sz = static_cast<uint64_t>(entry.file_size()); }
+            catch(const std::filesystem::filesystem_error&) {}
+            if(!s_manifest.empty())
+                s_manifest += '\n';
+            s_manifest += rel + '\t' + std::to_string(sz);
+        }
+    } catch(const std::filesystem::filesystem_error& e) {
+        fprintf(stderr, "[godotpcktool] listPck walk error: %s\n", e.what());
     }
 
     const int count = s_manifest.empty() ?
