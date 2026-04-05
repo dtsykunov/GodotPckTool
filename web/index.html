@@ -64,12 +64,64 @@
       box-shadow: 0 1px 3px rgba(0,0,0,0.12);
     }
 
-    /* ── Mode description ── */
+    /* ── Mode guide ── */
     #mode-desc {
-      font-size: 0.83rem;
-      color: #666;
-      line-height: 1.5;
       margin-bottom: 1rem;
+    }
+    .guide {
+      font-size: 0.82rem;
+      color: #374151;
+      line-height: 1.6;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 0.75rem 0.9rem;
+    }
+    .guide-result {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #16a34a;
+      margin-bottom: 0.45rem;
+      letter-spacing: 0.01em;
+    }
+    .guide code {
+      font-family: monospace;
+      font-size: 0.9em;
+      background: #dbeafe;
+      color: #1e40af;
+      padding: 0.08em 0.3em;
+      border-radius: 3px;
+    }
+    .guide-steps {
+      margin: 0.45rem 0 0 1.1rem;
+      padding: 0;
+    }
+    .guide-steps > li { margin-bottom: 0.25rem; }
+    .guide-sub {
+      margin: 0.2rem 0 0.1rem 1rem;
+      padding: 0;
+      list-style: disc;
+    }
+    .guide-sub li { margin-bottom: 0.15rem; }
+    .guide-examples {
+      margin-top: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+    .guide-example {
+      display: flex;
+      align-items: baseline;
+      gap: 0.4rem;
+      font-size: 0.79rem;
+      color: #555;
+    }
+    .guide-example .ex-label { color: #6b7280; flex-shrink: 0; }
+
+    /* ── Focus styles ── */
+    :focus-visible {
+      outline: 2px solid #2563eb;
+      outline-offset: 2px;
     }
 
     /* ── Drop zone ── */
@@ -98,7 +150,8 @@
       color: #555;
       margin-bottom: 0.25rem;
     }
-    .hint { color: #9ca3af; font-size: 0.75rem; }
+    .hint { color: #9ca3af; font-size: 0.75rem; display: block; margin-top: 0.2rem; line-height: 1.45; }
+    .hint code { font-family: monospace; font-size: 0.9em; background: #f1f5f9; color: #475569; padding: 0.08em 0.3em; border-radius: 3px; }
     .form-row input[type="text"] {
       width: 100%;
       padding: 0.45rem 0.6rem;
@@ -230,15 +283,68 @@
 
   <div class="card">
     <div class="tabs" role="tablist">
-      <button class="tab active" role="tab" data-mode="extract">Extract</button>
-      <button class="tab"        role="tab" data-mode="list">List</button>
-      <button class="tab"        role="tab" data-mode="repack">Repack</button>
-      <button class="tab"        role="tab" data-mode="add">Add file</button>
+      <button class="tab active" role="tab" aria-selected="true"  data-mode="extract">Extract</button>
+      <button class="tab"        role="tab" aria-selected="false" data-mode="list">List</button>
+      <button class="tab"        role="tab" aria-selected="false" data-mode="repack">Repack</button>
+      <button class="tab"        role="tab" aria-selected="false" data-mode="add">Add file</button>
     </div>
 
-    <p id="mode-desc"></p>
+    <div id="mode-desc" role="region" aria-label="Mode instructions">
 
-    <div id="drop-zone">
+      <!-- Extract guide -->
+      <div class="guide" data-mode="extract">
+        <div class="guide-result">&#8595; Result: downloads as <code>&lt;name&gt;.zip</code></div>
+        Extracts every file from a <code>.pck</code> archive into a ZIP you can save and inspect locally. No configuration needed.
+        <ol class="guide-steps">
+          <li>Drop or click to choose your <code>.pck</code> file</li>
+          <li>Extraction runs automatically &mdash; then click Download</li>
+        </ol>
+      </div>
+
+      <!-- List guide -->
+      <div class="guide" data-mode="list" style="display:none">
+        <div class="guide-result">&#8595; Result: interactive file tree shown below. Nothing is downloaded.</div>
+        Inspect the contents of a <code>.pck</code> &mdash; file names, folder structure, and sizes &mdash; without extracting anything.
+        <ol class="guide-steps">
+          <li>Drop or click to choose your <code>.pck</code> file</li>
+          <li>Browse the file tree; click any folder to expand or collapse it</li>
+        </ol>
+      </div>
+
+      <!-- Repack guide -->
+      <div class="guide" data-mode="repack" style="display:none">
+        <div class="guide-result">&#8595; Result: downloads as <code>&lt;name&gt;-repacked.pck</code></div>
+        Creates a filtered copy of a <code>.pck</code>. Both regex fields are optional &mdash; leave them empty to repack as-is.
+        <div class="guide-examples">
+          <div class="guide-example"><span class="ex-label">Keep only PNGs:</span><code>\.png$</code></div>
+          <div class="guide-example"><span class="ex-label">Remove import files:</span><code>\.import$</code></div>
+          <div class="guide-example"><span class="ex-label">Keep a folder:</span><code>^res://sprites/</code></div>
+          <div class="guide-example"><span class="ex-label">Remove a folder:</span><code>^res://debug/</code></div>
+        </div>
+      </div>
+
+      <!-- Add guide -->
+      <div class="guide" data-mode="add" style="display:none">
+        <div class="guide-result">&#8595; Result: downloads as <code>&lt;name&gt;-modified.pck</code></div>
+        Adds files into an existing <code>.pck</code> archive. You can add a single file or an entire ZIP at once.
+        <ol class="guide-steps">
+          <li>Drop your <code>.pck</code> file in the zone above</li>
+          <li>Choose what to add in the zone below:
+            <ul class="guide-sub">
+              <li><strong>Single file</strong> &mdash; set the <code>res://</code> destination path,
+                e.g. <code>res://sprites/hero.png</code></li>
+              <li><strong>ZIP archive</strong> &mdash; all files inside are added at once; strip a leading
+                folder to control paths, e.g. strip <code>assets</code> so that
+                <code>assets/hero.png</code> becomes <code>res://hero.png</code></li>
+            </ul>
+          </li>
+          <li>Click <strong>Add to PCK</strong></li>
+        </ol>
+      </div>
+
+    </div>
+
+    <div id="drop-zone" aria-label="Choose .pck file">
       <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2"
            viewBox="0 0 24 24" aria-hidden="true">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -246,39 +352,45 @@
         <line x1="12" y1="3" x2="12" y2="15"/>
       </svg>
       <p>Choose .pck file</p>
-      <input type="file" id="file-input" accept=".pck">
+      <input type="file" id="file-input" accept=".pck" aria-label="Choose a .pck file">
     </div>
 
     <!-- Repack mode controls -->
     <div id="repack-controls" style="display:none">
       <div class="form-row">
-        <label for="include-regex">Include regex <span class="hint">(empty = include all files)</span></label>
-        <input type="text" id="include-regex" placeholder="e.g. \.png$">
+        <label for="include-regex">Include only files matching this regex</label>
+        <input type="text" id="include-regex" placeholder="e.g. \.png$" aria-describedby="include-regex-hint">
+        <span id="include-regex-hint" class="hint">Leave empty to include all files. Example: <code>\.png$</code> keeps only PNGs.</span>
       </div>
       <div class="form-row">
-        <label for="exclude-regex">Exclude regex <span class="hint">(empty = exclude nothing)</span></label>
-        <input type="text" id="exclude-regex" placeholder="e.g. \.import$">
+        <label for="exclude-regex">Exclude files matching this regex</label>
+        <input type="text" id="exclude-regex" placeholder="e.g. \.import$" aria-describedby="exclude-regex-hint">
+        <span id="exclude-regex-hint" class="hint">Leave empty to exclude nothing. Example: <code>\.import$</code> removes Godot import files.</span>
       </div>
     </div>
 
     <!-- Add mode controls -->
     <div id="add-controls" style="display:none">
-      <div id="add-file-zone">
+      <div id="add-file-zone" aria-label="Choose file or ZIP to add">
         Choose file to add (.zip or any file)
-        <input type="file" id="add-file-input">
+        <input type="file" id="add-file-input" aria-label="Choose file or ZIP archive to add">
       </div>
       <div class="form-row" id="add-single-row">
         <label for="pck-path">Destination path inside the PCK</label>
-        <input type="text" id="pck-path" placeholder="res://filename.png">
+        <input type="text" id="pck-path" placeholder="res://sprites/hero.png" aria-describedby="pck-path-hint">
+        <span id="pck-path-hint" class="hint">Must start with <code>res://</code>. This is the path the file will have inside the archive.</span>
       </div>
       <div class="form-row" id="add-zip-row" style="display:none">
-        <label for="zip-strip-prefix">Strip prefix from ZIP paths <span class="hint">(e.g. "assets" turns assets/hero.png → res://hero.png; leave empty to keep full path)</span></label>
-        <input type="text" id="zip-strip-prefix" placeholder="auto-detected">
+        <label for="zip-strip-prefix">Strip prefix from ZIP paths</label>
+        <input type="text" id="zip-strip-prefix" placeholder="auto-detected from ZIP" aria-describedby="zip-prefix-hint">
+        <span id="zip-prefix-hint" class="hint">Removes a leading folder from ZIP entries before adding them.<br>
+          Example: strip <code>assets</code> → <code>assets/hero.png</code> becomes <code>res://hero.png</code>.<br>
+          Leave empty to keep the full ZIP path (a common top-level folder is auto-detected).</span>
       </div>
       <button id="add-btn" style="display:none">Add to PCK</button>
     </div>
 
-    <div id="status"></div>
+    <div id="status" role="status" aria-live="polite"></div>
     <a id="download-btn" style="display:none">Download</a>
   </div>
 
@@ -289,12 +401,7 @@
 
   <script>
     // ── Constants ─────────────────────────────────────────────────────────────
-    const MODE_DESCS = {
-      extract: 'Drop a .pck file to extract all its contents and download them as a .zip archive.',
-      list:    'Drop a .pck file to inspect its contents. A collapsible file tree will appear below — nothing is downloaded.',
-      repack:  'Drop a .pck file to repack it, optionally filtering files by regex. Leave both fields empty to repack as-is. The result downloads as a new .pck file.',
-      add:     'Drop a .pck file above, then choose the file to add below. Set its destination path inside the archive (e.g. res://sprites/hero.png) and click "Add to PCK". The modified .pck downloads.'
-    };
+    // Guide panels are static HTML elements in the DOM — no dynamic content needed.
 
     // ── State ─────────────────────────────────────────────────────────────────
     let wasmModule      = null;  // cached Emscripten module instance
@@ -308,7 +415,6 @@
 
     // ── DOM refs ──────────────────────────────────────────────────────────────
     const tabs           = document.querySelectorAll('.tab');
-    const modeDesc       = document.getElementById('mode-desc');
     const dropZone       = document.getElementById('drop-zone');
     const fileInput      = document.getElementById('file-input');
     const repackControls = document.getElementById('repack-controls');
@@ -367,8 +473,14 @@
     // ── Mode switching ────────────────────────────────────────────────────────
     function switchMode(mode) {
       activeMode = mode;
-      tabs.forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
-      modeDesc.textContent = MODE_DESCS[mode] || '';
+      tabs.forEach(t => {
+        const on = t.dataset.mode === mode;
+        t.classList.toggle('active', on);
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      document.querySelectorAll('#mode-desc .guide').forEach(
+        g => { g.style.display = g.dataset.mode === mode ? '' : 'none'; }
+      );
       repackControls.style.display = mode === 'repack' ? 'block' : 'none';
       addControls.style.display    = mode === 'add'    ? 'block' : 'none';
       setStatus('', '');
