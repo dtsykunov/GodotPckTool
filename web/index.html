@@ -712,65 +712,189 @@
         setStatus('Select both files first.', 'error');
         return;
       }
-      const pckPath = pckPathInput.value.trim();
-      if (!pckPath) {
-        setStatus('Enter a destination path inside the PCK (e.g. res://myfile.png).', 'error');
-        return;
+      if (!selectedAddFileIsZip) {
+        const pckPath = pckPathInput.value.trim();
+        if (!pckPath) {
+          setStatus('Enter a destination path inside the PCK (e.g. res://myfile.png).', 'error');
+          return;
+        }
       }
 
       isProcessing = true;
       try {
         hideDownload();
-        setStatusSpinner('Loading extractor\u2026');
 
-        let Module;
-        try {
-          Module = await getWasmModule();
-        } catch (e) {
-          setStatus('Failed to load extractor: ' + e.message, 'error');
-          return;
+        if (selectedAddFileIsZip) {
+          // ── ZIP branch ──────────────────────────────────────────────────────
+          setStatusSpinner('Loading tools\u2026');
+
+          let Module, JSZip;
+          try {
+            [Module, JSZip] = await Promise.all([getWasmModule(), getJSZip()]);
+          } catch (e) {
+            setStatus('Failed to load tools: ' + e.message, 'error');
+            return;
+          }
+
+          setStatusSpinner('Reading ZIP\u2026');
+
+          let zipBytes;
+          try {
+            zipBytes = await selectedAddFile.arrayBuffer();
+          } catch (e) {
+            setStatus('Failed to read ZIP: ' + e.message, 'error');
+            return;
+          }
+
+          let zip;
+          try {
+            zip = await new JSZip().loadAsync(zipBytes);
+          } catch (e) {
+            setStatus('Failed to parse ZIP: ' + e.message, 'error');
+            return;
+          }
+
+          // Collect non-directory entries
+          const entries = [];
+          zip.forEach((relPath, file) => {
+            if (!file.dir) entries.push({ relPath, file });
+          });
+
+          if (entries.length === 0) {
+            setStatus('ZIP contains no files.', 'error');
+            return;
+          }
+
+          // Auto-detect strip prefix: common top-level folder across all entries
+          let stripPrefix = zipStripPrefix.value.trim();
+          if (!stripPrefix) {
+            const firstSegment = entries[0].relPath.split('/')[0];
+            const allSharePrefix = entries.every(e => e.relPath.split('/')[0] === firstSegment);
+            const anyHasSubdir   = entries.some(e => e.relPath.includes('/'));
+            if (allSharePrefix && anyHasSubdir) {
+              stripPrefix          = firstSegment;
+              zipStripPrefix.value = stripPrefix;
+            }
+          }
+
+          setStatusSpinner('Staging ' + entries.length + ' files\u2026');
+
+          // Ensure /add_staged/ exists in MEMFS
+          try { Module.FS.mkdir('/add_staged'); } catch (_) { /* already exists */ }
+
+          const manifestLines = [];
+          for (let i = 0; i < entries.length; i++) {
+            const { relPath, file } = entries[i];
+            let pckRelPath = relPath;
+            if (stripPrefix && pckRelPath.startsWith(stripPrefix + '/')) {
+              pckRelPath = pckRelPath.slice(stripPrefix.length + 1);
+            }
+            const pckPath   = pckRelPath.startsWith('res://') ? pckRelPath : 'res://' + pckRelPath;
+            const memfsPath = '/add_staged/' + i;
+
+            let bytes;
+            try {
+              bytes = await file.async('uint8array');
+            } catch (e) {
+              setStatus('Failed to read ' + relPath + ' from ZIP: ' + e.message, 'error');
+              return;
+            }
+
+            Module.FS.writeFile(memfsPath, bytes);
+            manifestLines.push(memfsPath + '\t' + pckPath);
+          }
+
+          const manifest = manifestLines.join('\n');
+          setStatusSpinner('Adding ' + entries.length + ' files to ' + selectedPckFile.name + '\u2026');
+
+          let pckBytes;
+          try {
+            pckBytes = new Uint8Array(await selectedPckFile.arrayBuffer());
+          } catch (e) {
+            setStatus('Failed to read PCK: ' + e.message, 'error');
+            return;
+          }
+
+          console.log('[godotpcktool] Calling addMultipleFilesToPck:',
+            selectedPckFile.name, pckBytes.length, 'bytes +',
+            entries.length, 'files from', selectedAddFile.name);
+
+          const pckPtr      = Module._malloc(pckBytes.length);
+          Module.HEAPU8.set(pckBytes, pckPtr);
+          const manifestPtr = allocString(Module, manifest);
+          const result      = Module._addMultipleFilesToPck(pckPtr, pckBytes.length, manifestPtr);
+          Module._free(pckPtr);
+          Module._free(manifestPtr);
+
+          if (result !== 0) {
+            const err = Module.UTF8ToString(Module._getLastError());
+            console.error('[godotpcktool] addMultipleFilesToPck error:', err);
+            setStatus(err, 'error');
+            return;
+          }
+
+          const outBytes = Module.FS.readFile('/output.pck');
+          const blob     = new Blob([outBytes], { type: 'application/octet-stream' });
+          const outName  = selectedPckFile.name.replace(/\.pck$/i, '') + '-modified.pck';
+          const word     = entries.length === 1 ? 'file' : 'files';
+          console.log('[godotpcktool] ZIP add done:', outName, blob.size, 'bytes');
+          setStatus('Added ' + entries.length + ' ' + word + ' from ' + selectedAddFile.name, 'success');
+          showDownload(blob, outName);
+
+        } else {
+          // ── Single-file branch (unchanged) ──────────────────────────────────
+          const pckPath = pckPathInput.value.trim();
+          setStatusSpinner('Loading extractor\u2026');
+
+          let Module;
+          try {
+            Module = await getWasmModule();
+          } catch (e) {
+            setStatus('Failed to load extractor: ' + e.message, 'error');
+            return;
+          }
+
+          setStatusSpinner('Adding ' + selectedAddFile.name + ' to ' + selectedPckFile.name + '\u2026');
+
+          let pckBytes, fileBytes;
+          try {
+            [pckBytes, fileBytes] = await Promise.all([
+              selectedPckFile.arrayBuffer().then(b => new Uint8Array(b)),
+              selectedAddFile.arrayBuffer().then(b => new Uint8Array(b))
+            ]);
+          } catch (e) {
+            setStatus('Failed to read files: ' + e.message, 'error');
+            return;
+          }
+
+          console.log('[godotpcktool] Calling addToPck:',
+            selectedPckFile.name, pckBytes.length, '+',
+            selectedAddFile.name, fileBytes.length, '->', pckPath);
+
+          const pckPtr  = Module._malloc(pckBytes.length);
+          Module.HEAPU8.set(pckBytes, pckPtr);
+          const filePtr = Module._malloc(fileBytes.length);
+          Module.HEAPU8.set(fileBytes, filePtr);
+          const pathPtr = allocString(Module, pckPath);
+          const result  = Module._addToPck(pckPtr, pckBytes.length, filePtr, fileBytes.length, pathPtr);
+          Module._free(pckPtr);
+          Module._free(filePtr);
+          Module._free(pathPtr);
+
+          if (result !== 0) {
+            const err = Module.UTF8ToString(Module._getLastError());
+            console.error('[godotpcktool] addToPck error:', err);
+            setStatus(err, 'error');
+            return;
+          }
+
+          const outBytes = Module.FS.readFile('/output.pck');
+          const blob     = new Blob([outBytes], { type: 'application/octet-stream' });
+          const outName  = selectedPckFile.name.replace(/\.pck$/i, '') + '-modified.pck';
+          console.log('[godotpcktool] Add done:', outName, blob.size, 'bytes');
+          setStatus('Added ' + selectedAddFile.name + ' to ' + selectedPckFile.name, 'success');
+          showDownload(blob, outName);
         }
-
-        setStatusSpinner('Adding ' + selectedAddFile.name + ' to ' + selectedPckFile.name + '\u2026');
-
-        let pckBytes, fileBytes;
-        try {
-          [pckBytes, fileBytes] = await Promise.all([
-            selectedPckFile.arrayBuffer().then(b => new Uint8Array(b)),
-            selectedAddFile.arrayBuffer().then(b => new Uint8Array(b))
-          ]);
-        } catch (e) {
-          setStatus('Failed to read files: ' + e.message, 'error');
-          return;
-        }
-
-        console.log('[godotpcktool] Calling addToPck:',
-          selectedPckFile.name, pckBytes.length, '+',
-          selectedAddFile.name, fileBytes.length, '->', pckPath);
-
-        const pckPtr  = Module._malloc(pckBytes.length);
-        Module.HEAPU8.set(pckBytes, pckPtr);
-        const filePtr = Module._malloc(fileBytes.length);
-        Module.HEAPU8.set(fileBytes, filePtr);
-        const pathPtr = allocString(Module, pckPath);
-        const result  = Module._addToPck(pckPtr, pckBytes.length, filePtr, fileBytes.length, pathPtr);
-        Module._free(pckPtr);
-        Module._free(filePtr);
-        Module._free(pathPtr);
-
-        if (result !== 0) {
-          const err = Module.UTF8ToString(Module._getLastError());
-          console.error('[godotpcktool] addToPck error:', err);
-          setStatus(err, 'error');
-          return;
-        }
-
-        const outBytes = Module.FS.readFile('/output.pck');
-        const blob     = new Blob([outBytes], { type: 'application/octet-stream' });
-        const outName  = selectedPckFile.name.replace(/\.pck$/i, '') + '-modified.pck';
-        console.log('[godotpcktool] Add done:', outName, blob.size, 'bytes');
-        setStatus('Added ' + selectedAddFile.name + ' to ' + selectedPckFile.name, 'success');
-        showDownload(blob, outName);
       } finally {
         isProcessing = false;
       }
