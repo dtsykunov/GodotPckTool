@@ -264,12 +264,16 @@
     <!-- Add mode controls -->
     <div id="add-controls" style="display:none">
       <div id="add-file-zone">
-        Choose file to add
+        Choose file to add (.zip or any file)
         <input type="file" id="add-file-input">
       </div>
-      <div class="form-row">
+      <div class="form-row" id="add-single-row">
         <label for="pck-path">Destination path inside the PCK</label>
         <input type="text" id="pck-path" placeholder="res://filename.png">
+      </div>
+      <div class="form-row" id="add-zip-row" style="display:none">
+        <label for="zip-strip-prefix">Strip prefix from ZIP paths <span class="hint">(e.g. "assets" turns assets/hero.png → res://hero.png; leave empty to keep full path)</span></label>
+        <input type="text" id="zip-strip-prefix" placeholder="auto-detected">
       </div>
       <button id="add-btn" style="display:none">Add to PCK</button>
     </div>
@@ -297,9 +301,10 @@
     let jszipLib        = null;  // cached JSZip class
     let activeBlobUrl   = null;  // tracked so it can be revoked on next download
     let isProcessing    = false; // guard against concurrent operations
-    let selectedPckFile = null;  // add mode: the .pck to modify
-    let selectedAddFile = null;  // add mode: the file to insert
-    let activeMode      = 'extract';
+    let selectedPckFile      = null;  // add mode: the .pck to modify
+    let selectedAddFile      = null;  // add mode: the file to insert
+    let selectedAddFileIsZip = false; // add mode: whether selected add-file is a ZIP
+    let activeMode           = 'extract';
 
     // ── DOM refs ──────────────────────────────────────────────────────────────
     const tabs           = document.querySelectorAll('.tab');
@@ -314,6 +319,9 @@
     const addFileInput   = document.getElementById('add-file-input');
     const pckPathInput   = document.getElementById('pck-path');
     const addBtn         = document.getElementById('add-btn');
+    const addSingleRow   = document.getElementById('add-single-row');
+    const addZipRow      = document.getElementById('add-zip-row');
+    const zipStripPrefix = document.getElementById('zip-strip-prefix');
     const statusEl       = document.getElementById('status');
     const downloadBtn    = document.getElementById('download-btn');
     const listOutput     = document.getElementById('list-output');
@@ -367,10 +375,14 @@
       hideDownload();
       listOutput.style.display = 'none';
       fileTree.textContent     = '';
-      selectedPckFile = null;
-      selectedAddFile = null;
-      addBtn.style.display = 'none';
-      pckPathInput.value   = '';
+      selectedPckFile          = null;
+      selectedAddFile          = null;
+      selectedAddFileIsZip     = false;
+      addBtn.style.display     = 'none';
+      pckPathInput.value       = '';
+      addSingleRow.style.display = 'block';
+      addZipRow.style.display    = 'none';
+      zipStripPrefix.value       = '';
     }
 
     tabs.forEach(t => t.addEventListener('click', () => switchMode(t.dataset.mode)));
@@ -682,6 +694,9 @@
       } else if (!selectedAddFile) {
         setStatus('PCK ready: ' + selectedPckFile.name + '. Now choose the file to add below.', '');
         addBtn.style.display = 'none';
+      } else if (selectedAddFileIsZip) {
+        setStatus('ZIP ready: ' + selectedAddFile.name + '. Click \u201cAdd to PCK\u201d to add all files.', 'success');
+        addBtn.style.display = 'block';
       } else {
         setStatus('Ready: add ' + selectedAddFile.name + ' into ' + selectedPckFile.name, 'success');
         addBtn.style.display = 'block';
@@ -768,8 +783,18 @@
     addFileInput.addEventListener('change', () => {
       const f = addFileInput.files[0];
       if (!f) return;
-      selectedAddFile = f;
-      if (!pckPathInput.value) pckPathInput.value = 'res://' + f.name;
+      selectedAddFile      = f;
+      selectedAddFileIsZip = f.name.toLowerCase().endsWith('.zip') ||
+                             f.type === 'application/zip';
+      if (selectedAddFileIsZip) {
+        addSingleRow.style.display = 'none';
+        addZipRow.style.display    = 'block';
+        zipStripPrefix.value       = '';
+      } else {
+        addSingleRow.style.display = 'block';
+        addZipRow.style.display    = 'none';
+        if (!pckPathInput.value) pckPathInput.value = 'res://' + f.name;
+      }
       updateAddStatus();
     });
     addFileZone.addEventListener('dragover', e => {
@@ -782,8 +807,18 @@
       addFileZone.classList.remove('drag-over');
       const f = e.dataTransfer.files[0];
       if (!f) return;
-      selectedAddFile = f;
-      if (!pckPathInput.value) pckPathInput.value = 'res://' + f.name;
+      selectedAddFile      = f;
+      selectedAddFileIsZip = f.name.toLowerCase().endsWith('.zip') ||
+                             f.type === 'application/zip';
+      if (selectedAddFileIsZip) {
+        addSingleRow.style.display = 'none';
+        addZipRow.style.display    = 'block';
+        zipStripPrefix.value       = '';
+      } else {
+        addSingleRow.style.display = 'block';
+        addZipRow.style.display    = 'none';
+        if (!pckPathInput.value) pckPathInput.value = 'res://' + f.name;
+      }
       updateAddStatus();
     });
 
