@@ -779,7 +779,11 @@
 
           setStatusSpinner('Staging ' + entries.length + ' files\u2026');
 
-          // Ensure /add_staged/ exists in MEMFS
+          // Ensure /add_staged/ exists in MEMFS, clearing stale files from prior runs
+          try {
+            const stale = Module.FS.readdir('/add_staged').filter(n => n !== '.' && n !== '..');
+            for (const n of stale) Module.FS.unlink('/add_staged/' + n);
+          } catch (_) { /* directory doesn't exist yet */ }
           try { Module.FS.mkdir('/add_staged'); } catch (_) { /* already exists */ }
 
           const manifestLines = [];
@@ -800,7 +804,12 @@
               return;
             }
 
-            Module.FS.writeFile(memfsPath, bytes);
+            try {
+              Module.FS.writeFile(memfsPath, bytes);
+            } catch (e) {
+              setStatus('Failed to stage ' + relPath + ' in memory: ' + e.message, 'error');
+              return;
+            }
             manifestLines.push(memfsPath + '\t' + pckPath);
           }
 
