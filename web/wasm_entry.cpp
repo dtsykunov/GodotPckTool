@@ -323,6 +323,8 @@ int addMultipleFilesToPck(const uint8_t* pck_data, std::size_t pck_len,
     fprintf(stderr, "[godotpcktool] addMultipleFilesToPck: Godot %s, format version %u\n",
         pck.GetGodotVersion().c_str(), pck.GetFormatVersion());
 
+    pck.ChangePath("/output.pck");
+
     std::istringstream ss(manifest ? manifest : "");
     std::string line;
     int count = 0;
@@ -340,7 +342,7 @@ int addMultipleFilesToPck(const uint8_t* pck_data, std::size_t pck_len,
         fprintf(stderr, "[godotpcktool] adding %s -> %s\n",
             memfsPath.c_str(), pckPath.c_str());
         try {
-            pck.AddSingleFile(memfsPath, pckPath, false);
+            pck.AddSingleFile(memfsPath, pck.PreparePckPath(pckPath, ""), false);
         } catch(const std::exception& e) {
             s_lastError = std::string("Failed to add ") + memfsPath + ": " + e.what();
             fprintf(stderr, "[godotpcktool] ERROR: %s\n", s_lastError.c_str());
@@ -355,7 +357,6 @@ int addMultipleFilesToPck(const uint8_t* pck_data, std::size_t pck_len,
         return 1;
     }
 
-    pck.ChangePath("/output.pck");
     if(!pck.Save()) {
         s_lastError = "Failed to save modified PCK.";
         fprintf(stderr, "[godotpcktool] ERROR: Save() failed\n");
