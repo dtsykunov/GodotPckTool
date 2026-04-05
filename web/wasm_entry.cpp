@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <fstream>
 #include <regex>
+#include <sstream>
 #include <string>
 
 static std::string s_manifest;
@@ -289,6 +290,79 @@ int addToPck(const uint8_t* pck_data, std::size_t pck_len,
     }
 
     fprintf(stderr, "[godotpcktool] addToPck: done\n");
+    return 0;
+}
+
+// Loads PCK, adds multiple pre-staged files from WASM MEMFS, saves to /output.pck.
+// manifest: newline-separated "memfs_path\tpck_path" pairs.
+// JS must write each file to MEMFS (e.g. /add_staged/0, /add_staged/1) before calling this.
+// Returns 0 on success, non-zero on error (call getLastError() for message).
+int addMultipleFilesToPck(const uint8_t* pck_data, std::size_t pck_len,
+                          const char* manifest)
+{
+    s_lastError.clear();
+
+    fprintf(stderr, "[godotpcktool] addMultipleFilesToPck: pck=%zu bytes\n", pck_len);
+
+    std::error_code ec;
+    std::filesystem::remove("/input.pck", ec);
+    std::filesystem::remove("/output.pck", ec);
+
+    if(!writeToMemfs(pck_data, pck_len, "/input.pck")) {
+        fprintf(stderr, "[godotpcktool] ERROR: %s\n", s_lastError.c_str());
+        return 1;
+    }
+
+    pcktool::PckFile pck("/input.pck");
+    if(!pck.Load()) {
+        s_lastError =
+            "Failed to load PCK. The file may be invalid, corrupted, or an unsupported version.";
+        fprintf(stderr, "[godotpcktool] ERROR: Load() failed\n");
+        return 2;
+    }
+    fprintf(stderr, "[godotpcktool] addMultipleFilesToPck: Godot %s, format version %u\n",
+        pck.GetGodotVersion().c_str(), pck.GetFormatVersion());
+
+    std::istringstream ss(manifest ? manifest : "");
+    std::string line;
+    int count = 0;
+    while(std::getline(ss, line)) {
+        if(line.empty())
+            continue;
+        const auto tab = line.find('\t');
+        if(tab == std::string::npos) {
+            s_lastError = "Malformed manifest line (missing tab): " + line;
+            fprintf(stderr, "[godotpcktool] ERROR: %s\n", s_lastError.c_str());
+            return 1;
+        }
+        const std::string memfsPath = line.substr(0, tab);
+        const std::string pckPath   = line.substr(tab + 1);
+        fprintf(stderr, "[godotpcktool] adding %s -> %s\n",
+            memfsPath.c_str(), pckPath.c_str());
+        try {
+            pck.AddSingleFile(memfsPath, pckPath, false);
+        } catch(const std::exception& e) {
+            s_lastError = std::string("Failed to add ") + memfsPath + ": " + e.what();
+            fprintf(stderr, "[godotpcktool] ERROR: %s\n", s_lastError.c_str());
+            return 1;
+        }
+        ++count;
+    }
+
+    if(count == 0) {
+        s_lastError = "Manifest was empty — no files to add.";
+        fprintf(stderr, "[godotpcktool] ERROR: empty manifest\n");
+        return 1;
+    }
+
+    pck.ChangePath("/output.pck");
+    if(!pck.Save()) {
+        s_lastError = "Failed to save modified PCK.";
+        fprintf(stderr, "[godotpcktool] ERROR: Save() failed\n");
+        return 3;
+    }
+
+    fprintf(stderr, "[godotpcktool] addMultipleFilesToPck: added %d files\n", count);
     return 0;
 }
 
