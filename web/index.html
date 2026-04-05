@@ -905,7 +905,7 @@
             if (stripPrefix && pckRelPath.startsWith(stripPrefix + '/')) {
               pckRelPath = pckRelPath.slice(stripPrefix.length + 1);
             }
-            const pckPath   = pckRelPath.startsWith('res://') ? pckRelPath : 'res://' + pckRelPath;
+            const pckPath   = pckRelPath;
             const memfsPath = '/add_staged/' + i;
 
             let bytes;
