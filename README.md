@@ -3,11 +3,16 @@ Godot Pck Tool
 
 A standalone executable for unpacking and packing Godot .pck files.
 
-Browser interface
------------------
+Browser interface — Godot PCK Web
+---------------------------------
 
-A client-side web UI is available for basic operations (list, extract, repack)
-without installing anything. See [web/README.md](web/README.md) for details.
+[Godot PCK Web](web/README.md) is a browser-based companion tool for the common
+case: inspect, extract, and repack `.pck` files with no download or installation
+required. It runs the GodotPckTool core compiled to WebAssembly entirely
+client-side.
+
+For advanced operations (batch add, regex filtering, scripting, JSON commands)
+use this CLI tool instead.
 
 Command line usage
 ------------------

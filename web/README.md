@@ -1,11 +1,28 @@
-# Godot PCK Tool — Browser Edition
+# Godot PCK Web — Online PCK Inspector, Extractor & Repacker
 
-A fully client-side web interface for working with Godot `.pck` archive files.
-No server, no installation, no data leaves your machine.
+**Inspect, extract, and repack Godot `.pck` files in your browser — no download or installation required.**
 
-## Workflow
+Works on Windows, macOS, and Linux. All processing happens locally; no files are ever uploaded anywhere.
 
-**Extract → edit files locally → Pack**
+👉 **[Open the tool](https://dtsykunov.github.io/GodotPckTool/)**
+
+---
+
+## What it does
+
+- **List** — browse the file tree inside a `.pck`: paths, folder structure, and file sizes
+- **Extract** — download all files from a `.pck` as a `.zip` you can open and edit locally
+- **Pack** — turn a `.zip` back into a `.pck`, with your changes applied
+
+This covers the most common need: inspect a Godot package, extract its contents, modify them, and repack — without installing anything.
+
+---
+
+## Typical workflow
+
+```
+Extract  →  edit files in your file manager  →  Pack
+```
 
 1. Use **Extract** to download all files from a `.pck` as a `.zip`.
 2. Open the `.zip` and edit or replace files using your file manager.
@@ -13,33 +30,23 @@ No server, no installation, no data leaves your machine.
    do **not** compress the directory itself. See [Folder wrapping](#folder-wrapping) below.
 4. Use **Pack** to turn the modified `.zip` back into a `.pck`.
 
-## Modes
+---
 
-### List
-Browse the contents of a `.pck` — file names, folder structure, and sizes. Nothing is downloaded.
+## Choosing the Godot version when packing
 
-### Extract
-Extract all files from a `.pck` into a `.zip` archive you can open and edit locally.
-The original directory structure is preserved.
-Result downloads as `<name>.zip`.
-
-### Pack
-Create a `.pck` from a `.zip` archive.
-Every file in the ZIP becomes a file in the PCK at the same path.
-Result downloads as `<name>.pck`.
-
-> **Choosing the correct Godot version is important.**
-> The dropdown offers three options corresponding to the three supported PCK formats:
->
-> | Selection | PCK format |
-> |---|---|
-> | Godot 3.x | v1 |
-> | Godot 4.0 – 4.4 | v2 |
-> | Godot 4.5+ | v3 |
->
+> **The version selection affects the binary PCK format and is critical for compatibility.**
 > A PCK packed with the wrong format will be rejected by the engine at runtime.
 > Use **List** or **Extract** on your original `.pck` to see its version before packing.
-> If a future Godot release introduces a new PCK format, it will not appear in this list and is not supported.
+
+The tool supports all three current PCK formats:
+
+| Selection | PCK format |
+|---|---|
+| Godot 3.x | v1 |
+| Godot 4.0 – 4.4 | v2 |
+| Godot 4.5+ | v3 |
+
+If a future Godot release introduces a new PCK format, it will not appear in this list and is not yet supported.
 
 ---
 
@@ -70,10 +77,35 @@ cover all cases, so prefer zipping correctly in the first place.
 
 ---
 
+## Powered by GodotPckTool
+
+Godot PCK Web is a browser-based interface built on top of
+[GodotPckTool](https://github.com/hhyyrylainen/GodotPckTool) by
+[@hhyyrylainen](https://github.com/hhyyrylainen) — the original command-line tool
+for working with Godot `.pck` archives.
+
+The C++ core is compiled to WebAssembly via Emscripten and runs entirely client-side.
+All credit for the underlying PCK parsing and packing logic goes to the original
+GodotPckTool contributors.
+
+**For advanced use cases** — batch operations, scripting, regex filtering, JSON command files —
+use the [GodotPckTool CLI](https://github.com/hhyyrylainen/GodotPckTool) directly.
+
+---
+
+## Limitations
+
+- **Encrypted PCKs** are not supported — extraction and listing will fail.
+- **No progress bar** for large archives — the page is unresponsive during processing; this is normal.
+- **Godot version metadata** is not preserved exactly when packing — the output PCK records the
+  selected version family (e.g. 4.0.0), not the exact original patch version. This does not affect compatibility.
+- For anything beyond inspect / extract / repack, use the [GodotPckTool CLI](https://github.com/hhyyrylainen/GodotPckTool).
+
+---
+
 ## Building
 
-Requires [Emscripten](https://emscripten.org/) and CMake. The easiest way to get
-all dependencies is via the Nix devShell at the repository root:
+Requires [Emscripten](https://emscripten.org/) and CMake. The easiest way is via the Nix devShell:
 
 ```sh
 nix develop          # drops you into a shell with emscripten, cmake, ninja
@@ -97,11 +129,7 @@ The page **cannot** be opened directly as a `file://` URL — browsers block
 WASM fetches from local filesystem URLs.
 
 ```sh
-# Python (built-in)
 python3 -m http.server 8080 --directory web/
-
-# Node.js
-npx serve web/
 ```
 
 Then open `http://localhost:8080` in your browser.
@@ -110,18 +138,8 @@ Then open `http://localhost:8080` in your browser.
 
 ## Browser compatibility
 
-Requires a modern browser with WebAssembly and ES2017 support:
+Requires WebAssembly and ES2017 support:
 
 - Chrome / Edge 57+
 - Firefox 52+
 - Safari 11+
-
----
-
-## Limitations
-
-- **Encrypted PCKs** are not supported — extraction and listing will fail.
-- **No progress bar** for large archives — the page is unresponsive during
-  processing; this is normal.
-- **Godot version metadata** is not preserved when packing — the output PCK
-  reports version 0.0.0. Use the command-line tool if you need to control this.
