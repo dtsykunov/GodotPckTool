@@ -9,6 +9,7 @@
 
 static std::string s_manifest;
 static std::string s_lastError;
+static std::string s_lastPckVersion;
 
 // Walk dir recursively, appending relative paths to out.
 static void walkDir(const std::filesystem::path& dir, std::size_t rootLen, std::string& out)
@@ -102,8 +103,9 @@ int extractPck(const uint8_t* data, std::size_t len)
         fprintf(stderr, "[godotpcktool] ERROR: Load() failed\n");
         return 2;
     }
-    fprintf(stderr, "[godotpcktool] extractPck: Godot %s, format version %u\n",
-        pck.GetGodotVersion().c_str(), pck.GetFormatVersion());
+    s_lastPckVersion = "Godot " + pck.GetGodotVersion() +
+                       " (PCK format v" + std::to_string(pck.GetFormatVersion()) + ")";
+    fprintf(stderr, "[godotpcktool] extractPck: %s\n", s_lastPckVersion.c_str());
 
     if(!pck.Extract("/out/", false)) {
         s_lastError = "Extraction failed. The PCK may be encrypted or contain unsupported data.";
@@ -137,6 +139,11 @@ const char* getLastError()
     return s_lastError.c_str();
 }
 
+const char* getLastPckVersion()
+{
+    return s_lastPckVersion.c_str();
+}
+
 // Returns newline-separated "path\tsize_bytes" manifest, or nullptr on error.
 const char* listPck(const uint8_t* data, std::size_t len)
 {
@@ -161,8 +168,9 @@ const char* listPck(const uint8_t* data, std::size_t len)
         fprintf(stderr, "[godotpcktool] ERROR: Load() failed\n");
         return nullptr;
     }
-    fprintf(stderr, "[godotpcktool] listPck: Godot %s, format version %u\n",
-        pck.GetGodotVersion().c_str(), pck.GetFormatVersion());
+    s_lastPckVersion = "Godot " + pck.GetGodotVersion() +
+                       " (PCK format v" + std::to_string(pck.GetFormatVersion()) + ")";
+    fprintf(stderr, "[godotpcktool] listPck: %s\n", s_lastPckVersion.c_str());
 
     if(!pck.Extract("/out/", false)) {
         s_lastError = "Extraction failed. The PCK may be encrypted or contain unsupported data.";
@@ -207,7 +215,8 @@ const char* listPck(const uint8_t* data, std::size_t len)
 // manifest: newline-separated "memfs_path\tpck_path" pairs.
 // JS must write each file to MEMFS before calling this.
 // Returns 0 on success, non-zero on error (call getLastError() for message).
-int createPckFromManifest(const char* manifest)
+int createPckFromManifest(const char* manifest,
+                          uint32_t godot_major, uint32_t godot_minor, uint32_t godot_patch)
 {
     s_lastError.clear();
 
@@ -215,6 +224,7 @@ int createPckFromManifest(const char* manifest)
     std::filesystem::remove("/output.pck", ec);
 
     pcktool::PckFile pck("/output.pck");
+    pck.SetGodotVersion(godot_major, godot_minor, godot_patch);
 
     const int r = applyManifest(pck, manifest);
     if(r < 0) {

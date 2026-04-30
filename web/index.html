@@ -125,6 +125,32 @@
     }
     .guide-steps > li { margin-bottom: 0.25rem; }
 
+    /* ── Pack version control ── */
+    .pack-controls { margin-bottom: 0.85rem; }
+    .field-row { display: flex; flex-direction: column; gap: 0.25rem; }
+    .field-row label { font-size: 0.8rem; color: #555; }
+    .field-row input[type="text"] {
+      width: 100%;
+      padding: 0.45rem 0.6rem;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      font-family: monospace;
+      background: #f9fafb;
+      color: #111;
+    }
+    .field-row input[type="text"]:focus {
+      outline: none;
+      border-color: #2563eb;
+      background: #fff;
+    }
+    .field-hint {
+      font-size: 0.75rem;
+      color: #9ca3af;
+      line-height: 1.45;
+    }
+    .field-hint strong { color: #b45309; }
+
     /* ── Focus styles ── */
     :focus-visible {
       outline: 2px solid #2563eb;
@@ -279,13 +305,28 @@
 
       <div class="guide" data-mode="pack" style="display:none">
         <div class="guide-result">&#8595; Result: downloads as <code>&lt;name&gt;.pck</code></div>
-        Create a <code>.pck</code> from a ZIP archive. Use <strong>Extract</strong> to get the ZIP, edit the files inside, then drop it here.
+        Create a <code>.pck</code> from a ZIP archive. Use <strong>Extract</strong> to get the ZIP, edit the files, then drop the modified ZIP here.
         <ol class="guide-steps">
+          <li>Use <strong>Extract</strong> or <strong>List</strong> on your original <code>.pck</code> to find its Godot version</li>
+          <li>Enter that version below &mdash; <strong>it must match your game exactly</strong></li>
           <li>Drop or click to choose your <code>.zip</code> file</li>
           <li>Packing runs automatically &mdash; then click Download</li>
         </ol>
       </div>
 
+    </div>
+
+    <div id="pack-controls" class="pack-controls" style="display:none">
+      <div class="field-row">
+        <label for="godot-version">Godot version</label>
+        <input type="text" id="godot-version" placeholder="e.g. 4.2.1" maxlength="20"
+               aria-describedby="godot-version-hint">
+        <span id="godot-version-hint" class="field-hint">
+          <strong>Must match the version your game uses.</strong>
+          Godot 3.x and 4.x use incompatible PCK formats.
+          Use <strong>Extract</strong> or <strong>List</strong> to check the version of an existing <code>.pck</code>.
+        </span>
+      </div>
     </div>
 
     <div id="drop-zone" aria-label="Choose file">
@@ -324,6 +365,8 @@
     const dropZone      = document.getElementById('drop-zone');
     const dropZoneLabel = document.getElementById('drop-zone-label');
     const fileInput     = document.getElementById('file-input');
+    const packControls  = document.getElementById('pack-controls');
+    const godotVersion  = document.getElementById('godot-version');
     const statusEl      = document.getElementById('status');
     const downloadBtn   = document.getElementById('download-btn');
     const listOutput    = document.getElementById('list-output');
@@ -382,6 +425,7 @@
         ? 'Drop a .zip file here, or click to choose'
         : 'Drop a .pck file here, or click to choose';
       dropZone.setAttribute('aria-label', isPack ? 'Choose .zip file' : 'Choose .pck file');
+      packControls.style.display  = isPack ? 'block' : 'none';
 
       setStatus('', '');
       hideDownload();
@@ -543,8 +587,9 @@
         fileTree.textContent = '';
         fileTree.appendChild(treeEl);
         listOutput.style.display = 'block';
-        const word = lines.length === 1 ? 'file' : 'files';
-        setStatus(lines.length + ' ' + word + ' in ' + file.name, 'success');
+        const word    = lines.length === 1 ? 'file' : 'files';
+        const version = Module.UTF8ToString(Module._getLastPckVersion());
+        setStatus(lines.length + ' ' + word + ' in ' + file.name + ' \u2014 ' + version, 'success');
       } finally {
         isProcessing = false;
       }
@@ -613,8 +658,10 @@
 
         const zipName  = file.name.replace(/\.pck$/i, '') + '.zip';
         const fileWord = paths.length === 1 ? 'file' : 'files';
+        const version  = Module.UTF8ToString(Module._getLastPckVersion());
         console.log('[godotpcktool] Zip ready:', zipName, blob.size, 'bytes');
-        setStatus('Extracted ' + paths.length + ' ' + fileWord + ' from ' + file.name, 'success');
+        setStatus('Extracted ' + paths.length + ' ' + fileWord + ' from ' + file.name +
+                  ' \u2014 ' + version, 'success');
         showDownload(blob, zipName);
       } finally {
         isProcessing = false;
@@ -622,11 +669,25 @@
     }
 
     // ── Mode: Pack ────────────────────────────────────────────────────────────
+    function parseGodotVersion(str) {
+      const parts = str.trim().split('.').map(n => Math.max(0, parseInt(n, 10) || 0));
+      return { major: parts[0] || 0, minor: parts[1] || 0, patch: parts[2] || 0 };
+    }
+
     async function packZip(file) {
       if (isProcessing) {
         setStatus('Please wait for the current operation to finish.', 'error');
         return;
       }
+
+      const versionStr = godotVersion.value.trim();
+      if (!versionStr) {
+        setStatus('Enter the Godot version before packing (e.g. 4.2.1).', 'error');
+        godotVersion.focus();
+        return;
+      }
+      const { major, minor, patch } = parseGodotVersion(versionStr);
+
       isProcessing = true;
       try {
         hideDownload();
@@ -706,7 +767,7 @@
         console.log('[godotpcktool] Calling createPckFromManifest:', entries.length, 'files from', file.name);
 
         const manifestPtr = allocString(Module, manifest);
-        const result      = Module._createPckFromManifest(manifestPtr);
+        const result      = Module._createPckFromManifest(manifestPtr, major, minor, patch);
         Module._free(manifestPtr);
 
         if (result !== 0) {

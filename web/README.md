@@ -26,6 +26,11 @@ Create a `.pck` from a `.zip` archive.
 Every file in the ZIP becomes a file in the PCK at the same path.
 Result downloads as `<name>.pck`.
 
+> **Choosing the correct Godot version is important.**
+> Godot 3.x and 4.x use incompatible PCK formats (format v1 vs v2/v3).
+> A PCK packed with the wrong version will be rejected by the engine at runtime.
+> Use **List** or **Extract** on your original `.pck` to see its version before packing.
+
 ---
 
 ## Building
