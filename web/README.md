@@ -9,7 +9,9 @@ No server, no installation, no data leaves your machine.
 
 1. Use **Extract** to download all files from a `.pck` as a `.zip`.
 2. Open the `.zip` and edit or replace files using your file manager.
-3. Use **Pack** to turn the modified `.zip` back into a `.pck`.
+3. When re-zipping, select the **files and folders inside** the extracted directory —
+   do **not** compress the directory itself. See [Folder wrapping](#folder-wrapping) below.
+4. Use **Pack** to turn the modified `.zip` back into a `.pck`.
 
 ## Modes
 
@@ -30,6 +32,33 @@ Result downloads as `<name>.pck`.
 > Godot 3.x and 4.x use incompatible PCK formats (format v1 vs v2/v3).
 > A PCK packed with the wrong version will be rejected by the engine at runtime.
 > Use **List** or **Extract** on your original `.pck` to see its version before packing.
+
+---
+
+## Folder wrapping
+
+A common mistake when re-zipping extracted files is compressing the containing
+folder rather than its contents.
+
+**Wrong** — compressing the folder itself:
+```
+my_game/           ← the extracted folder
+  sprites/hero.png
+  levels/world1.tres
+```
+This produces a ZIP where every entry starts with `my_game/`, so Pack would create
+a PCK with paths `res://my_game/sprites/hero.png` — which the engine won't find.
+
+**Correct** — compressing the contents:
+```
+sprites/hero.png
+levels/world1.tres
+```
+
+**Auto-detection**: Pack automatically detects the common folder-wrapper pattern
+(all entries share one top-level folder that itself contains subdirectories) and
+strips it, notifying you in the status message. However, this heuristic does not
+cover all cases, so prefer zipping correctly in the first place.
 
 ---
 

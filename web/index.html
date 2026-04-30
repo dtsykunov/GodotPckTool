@@ -309,6 +309,7 @@
         <ol class="guide-steps">
           <li>Use <strong>Extract</strong> or <strong>List</strong> on your original <code>.pck</code> to find its Godot version</li>
           <li>Enter that version below &mdash; <strong>it must match your game exactly</strong></li>
+          <li>When re-zipping your files, select the <em>files and folders inside</em> &mdash; not the folder itself. If a wrapper folder is detected it will be stripped automatically.</li>
           <li>Drop or click to choose your <code>.zip</code> file</li>
           <li>Packing runs automatically &mdash; then click Download</li>
         </ol>
@@ -738,10 +739,25 @@
         } catch (_) {}
         try { Module.FS.mkdir('/pack_staged'); } catch (_) {}
 
+        // Detect accidental folder wrapping: if every entry shares the same
+        // top-level folder AND at least one entry has a subdirectory beneath it,
+        // the user likely zipped the folder itself rather than its contents.
+        let stripPrefix = '';
+        if (entries.length > 0) {
+          const firstSeg = entries[0].relPath.split('/')[0];
+          const allShare = entries.every(e => e.relPath.startsWith(firstSeg + '/'));
+          const anyDeep  = allShare && entries.some(e => {
+            const after = e.relPath.slice(firstSeg.length + 1);
+            return after.includes('/');
+          });
+          if (allShare && anyDeep) stripPrefix = firstSeg + '/';
+        }
+
         const manifestLines = [];
         for (let i = 0; i < entries.length; i++) {
           const { relPath, entry } = entries[i];
-          const memfsPath = '/pack_staged/' + i;
+          const pckRelPath = stripPrefix ? relPath.slice(stripPrefix.length) : relPath;
+          const memfsPath  = '/pack_staged/' + i;
 
           let bytes;
           try {
@@ -758,7 +774,7 @@
             return;
           }
 
-          manifestLines.push(memfsPath + '\t' + relPath);
+          manifestLines.push(memfsPath + '\t' + pckRelPath);
         }
 
         const manifest = manifestLines.join('\n');
@@ -777,12 +793,13 @@
           return;
         }
 
-        const outBytes = Module.FS.readFile('/output.pck');
-        const blob     = new Blob([outBytes], { type: 'application/octet-stream' });
-        const outName  = file.name.replace(/\.zip$/i, '') + '.pck';
-        const word     = entries.length === 1 ? 'file' : 'files';
-        console.log('[godotpcktool] Pack done:', outName, blob.size, 'bytes');
-        setStatus('Packed ' + entries.length + ' ' + word + ' into ' + outName, 'success');
+        const outBytes    = Module.FS.readFile('/output.pck');
+        const blob        = new Blob([outBytes], { type: 'application/octet-stream' });
+        const outName     = file.name.replace(/\.zip$/i, '') + '.pck';
+        const word        = entries.length === 1 ? 'file' : 'files';
+        const stripNotice = stripPrefix ? ' (stripped wrapper folder \u201c' + stripPrefix.slice(0, -1) + '\u201d)' : '';
+        console.log('[godotpcktool] Pack done:', outName, blob.size, 'bytes', stripPrefix ? 'stripped: ' + stripPrefix : '');
+        setStatus('Packed ' + entries.length + ' ' + word + ' into ' + outName + stripNotice, 'success');
         showDownload(blob, outName);
       } finally {
         isProcessing = false;
