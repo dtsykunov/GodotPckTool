@@ -129,17 +129,17 @@
     .pack-controls { margin-bottom: 0.85rem; }
     .field-row { display: flex; flex-direction: column; gap: 0.25rem; }
     .field-row label { font-size: 0.8rem; color: #555; }
-    .field-row input[type="text"] {
+    .field-row select {
       width: 100%;
       padding: 0.45rem 0.6rem;
       border: 1px solid #d1d5db;
       border-radius: 6px;
       font-size: 0.88rem;
-      font-family: monospace;
       background: #f9fafb;
       color: #111;
+      cursor: pointer;
     }
-    .field-row input[type="text"]:focus {
+    .field-row select:focus {
       outline: none;
       border-color: #2563eb;
       background: #fff;
@@ -320,12 +320,16 @@
     <div id="pack-controls" class="pack-controls" style="display:none">
       <div class="field-row">
         <label for="godot-version">Godot version</label>
-        <input type="text" id="godot-version" placeholder="e.g. 4.2.1" maxlength="20"
-               aria-describedby="godot-version-hint">
+        <select id="godot-version" aria-describedby="godot-version-hint">
+          <option value="">— select —</option>
+          <option value="3.0.0">Godot 3.x — PCK format v1</option>
+          <option value="4.0.0">Godot 4.0 – 4.4 — PCK format v2</option>
+          <option value="4.5.0">Godot 4.5+ — PCK format v3</option>
+        </select>
         <span id="godot-version-hint" class="field-hint">
-          <strong>Must match the version your game uses.</strong>
-          Godot 3.x and 4.x use incompatible PCK formats.
-          Use <strong>Extract</strong> or <strong>List</strong> to check the version of an existing <code>.pck</code>.
+          <strong>Must match the engine version your game uses.</strong>
+          Use <strong>Extract</strong> or <strong>List</strong> to check an existing <code>.pck</code>.
+          Only PCK formats v1–v3 are supported; newer Godot versions may introduce additional formats not listed here.
         </span>
       </div>
     </div>
@@ -681,9 +685,9 @@
         return;
       }
 
-      const versionStr = godotVersion.value.trim();
+      const versionStr = godotVersion.value;
       if (!versionStr) {
-        setStatus('Enter the Godot version before packing (e.g. 4.2.1).', 'error');
+        setStatus('Select the Godot version before packing.', 'error');
         godotVersion.focus();
         return;
       }

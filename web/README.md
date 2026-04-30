@@ -29,9 +29,17 @@ Every file in the ZIP becomes a file in the PCK at the same path.
 Result downloads as `<name>.pck`.
 
 > **Choosing the correct Godot version is important.**
-> Godot 3.x and 4.x use incompatible PCK formats (format v1 vs v2/v3).
-> A PCK packed with the wrong version will be rejected by the engine at runtime.
+> The dropdown offers three options corresponding to the three supported PCK formats:
+>
+> | Selection | PCK format |
+> |---|---|
+> | Godot 3.x | v1 |
+> | Godot 4.0 – 4.4 | v2 |
+> | Godot 4.5+ | v3 |
+>
+> A PCK packed with the wrong format will be rejected by the engine at runtime.
 > Use **List** or **Extract** on your original `.pck` to see its version before packing.
+> If a future Godot release introduces a new PCK format, it will not appear in this list and is not supported.
 
 ---
 
