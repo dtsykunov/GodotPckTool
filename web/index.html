@@ -36,10 +36,39 @@
       box-shadow: 0 1px 4px rgba(0,0,0,0.08), 0 6px 16px rgba(0,0,0,0.05);
     }
 
+    /* ── Workflow hint ── */
+    .workflow-hint {
+      font-size: 0.82rem;
+      color: #374151;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 0.6rem 0.9rem;
+      margin-bottom: 1rem;
+      line-height: 1.5;
+    }
+    .workflow-hint strong { color: #15803d; }
+    .workflow-steps {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      margin-top: 0.25rem;
+      font-size: 0.79rem;
+    }
+    .workflow-step {
+      background: #dcfce7;
+      color: #166534;
+      border-radius: 4px;
+      padding: 0.1em 0.45em;
+      font-weight: 600;
+    }
+    .workflow-arrow { color: #86efac; font-size: 0.9em; }
+
     /* ── Tabs ── */
     .tabs {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 3px;
       background: #f0f2f5;
       border-radius: 8px;
@@ -65,9 +94,7 @@
     }
 
     /* ── Mode guide ── */
-    #mode-desc {
-      margin-bottom: 1rem;
-    }
+    #mode-desc { margin-bottom: 1rem; }
     .guide {
       font-size: 0.82rem;
       color: #374151;
@@ -97,26 +124,6 @@
       padding: 0;
     }
     .guide-steps > li { margin-bottom: 0.25rem; }
-    .guide-sub {
-      margin: 0.2rem 0 0.1rem 1rem;
-      padding: 0;
-      list-style: disc;
-    }
-    .guide-sub li { margin-bottom: 0.15rem; }
-    .guide-examples {
-      margin-top: 0.5rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.2rem;
-    }
-    .guide-example {
-      display: flex;
-      align-items: baseline;
-      gap: 0.4rem;
-      font-size: 0.79rem;
-      color: #555;
-    }
-    .guide-example .ex-label { color: #6b7280; flex-shrink: 0; }
 
     /* ── Focus styles ── */
     :focus-visible {
@@ -142,65 +149,7 @@
     #drop-zone p { color: #64748b; font-size: 0.88rem; }
     #file-input { display: none; }
 
-    /* ── Form inputs ── */
-    .form-row { margin-top: 0.75rem; }
-    .form-row label {
-      display: block;
-      font-size: 0.8rem;
-      color: #555;
-      margin-bottom: 0.25rem;
-    }
-    .hint { color: #9ca3af; font-size: 0.75rem; display: block; margin-top: 0.2rem; line-height: 1.45; }
-    .hint code { font-family: monospace; font-size: 0.9em; background: #f1f5f9; color: #475569; padding: 0.08em 0.3em; border-radius: 3px; }
-    .form-row input[type="text"] {
-      width: 100%;
-      padding: 0.45rem 0.6rem;
-      border: 1px solid #d1d5db;
-      border-radius: 6px;
-      font-size: 0.88rem;
-      font-family: monospace;
-      background: #f9fafb;
-      color: #111;
-    }
-    .form-row input[type="text"]:focus {
-      outline: none;
-      border-color: #2563eb;
-      background: #fff;
-    }
-
-    /* ── Add file zone ── */
-    #add-file-zone {
-      margin-top: 0.75rem;
-      border: 2px dashed #cbd5e1;
-      border-radius: 8px;
-      padding: 1rem;
-      text-align: center;
-      cursor: pointer;
-      font-size: 0.85rem;
-      color: #64748b;
-      transition: border-color 0.15s, background 0.15s;
-    }
-    #add-file-zone:hover, #add-file-zone.drag-over {
-      border-color: #2563eb;
-      background: #eff6ff;
-    }
-    #add-file-input { display: none; }
-
-    /* ── Buttons ── */
-    #add-btn {
-      margin-top: 0.75rem;
-      width: 100%;
-      padding: 0.6rem;
-      background: #2563eb;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-size: 0.92rem;
-      font-weight: 500;
-      cursor: pointer;
-    }
-    #add-btn:hover { background: #1d4ed8; }
-
+    /* ── Download button ── */
     #download-btn {
       display: none;
       margin-top: 0.75rem;
@@ -273,174 +222,118 @@
       vertical-align: middle; margin-right: 0.4em;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    footer {
+      margin-top: 1.5rem;
+      font-size: 0.75rem;
+      color: #9ca3af;
+      text-align: center;
+    }
+    footer a { color: #9ca3af; text-decoration: none; }
+    footer a:hover { color: #6b7280; text-decoration: underline; }
   </style>
 </head>
 <body>
   <header>
     <h1>Godot PCK Tool</h1>
-    <p class="subtitle">Inspect, extract, repack, or modify <code>.pck</code> archives — in your browser</p>
+    <p class="subtitle">Inspect and extract <code>.pck</code> archives — in your browser</p>
   </header>
 
   <div class="card">
+    <div class="workflow-hint">
+      <strong>How to modify a .pck:</strong>
+      <div class="workflow-steps">
+        <span class="workflow-step">Extract</span>
+        <span class="workflow-arrow">→</span>
+        <span>edit files in your file manager</span>
+        <span class="workflow-arrow">→</span>
+        <span class="workflow-step">Pack</span>
+      </div>
+    </div>
+
     <div class="tabs" role="tablist">
-      <button class="tab active" role="tab" aria-selected="true"  data-mode="extract">Extract</button>
-      <button class="tab"        role="tab" aria-selected="false" data-mode="list">List</button>
-      <button class="tab"        role="tab" aria-selected="false" data-mode="repack">Repack</button>
-      <button class="tab"        role="tab" aria-selected="false" data-mode="add">Add file</button>
+      <button class="tab active" role="tab" aria-selected="true"  data-mode="list">List</button>
+      <button class="tab"        role="tab" aria-selected="false" data-mode="extract">Extract</button>
+      <button class="tab"        role="tab" aria-selected="false" data-mode="pack">Pack</button>
     </div>
 
     <div id="mode-desc" role="region" aria-label="Mode instructions">
 
-      <!-- Extract guide -->
-      <div class="guide" data-mode="extract">
+      <div class="guide" data-mode="list">
+        Browse the contents of a <code>.pck</code> — file names, folder structure, and sizes. Nothing is downloaded.
+        <ol class="guide-steps">
+          <li>Drop or click to choose your <code>.pck</code> file</li>
+          <li>Browse the tree below; click any folder to expand or collapse it</li>
+        </ol>
+      </div>
+
+      <div class="guide" data-mode="extract" style="display:none">
         <div class="guide-result">&#8595; Result: downloads as <code>&lt;name&gt;.zip</code></div>
-        Extracts every file from a <code>.pck</code> archive into a ZIP you can save and inspect locally. No configuration needed.
+        Extract every file from a <code>.pck</code> into a ZIP you can open and edit locally.
         <ol class="guide-steps">
           <li>Drop or click to choose your <code>.pck</code> file</li>
           <li>Extraction runs automatically &mdash; then click Download</li>
         </ol>
       </div>
 
-      <!-- List guide -->
-      <div class="guide" data-mode="list" style="display:none">
-        <div class="guide-result">&#8595; Result: interactive file tree shown below. Nothing is downloaded.</div>
-        Inspect the contents of a <code>.pck</code> &mdash; file names, folder structure, and sizes &mdash; without extracting anything.
+      <div class="guide" data-mode="pack" style="display:none">
+        <div class="guide-result">&#8595; Result: downloads as <code>&lt;name&gt;.pck</code></div>
+        Create a <code>.pck</code> from a ZIP archive. Use <strong>Extract</strong> to get the ZIP, edit the files inside, then drop it here.
         <ol class="guide-steps">
-          <li>Drop or click to choose your <code>.pck</code> file</li>
-          <li>Browse the file tree; click any folder to expand or collapse it</li>
-        </ol>
-      </div>
-
-      <!-- Repack guide -->
-      <div class="guide" data-mode="repack" style="display:none">
-        <div class="guide-result">&#8595; Result: downloads as <code>&lt;name&gt;-repacked.pck</code></div>
-        Creates a filtered copy of a <code>.pck</code>. Both regex fields are optional &mdash; leave them empty to repack as-is.
-        <div class="guide-examples">
-          <div class="guide-example"><span class="ex-label">Keep only PNGs:</span><code>\.png$</code></div>
-          <div class="guide-example"><span class="ex-label">Remove import files:</span><code>\.import$</code></div>
-          <div class="guide-example"><span class="ex-label">Keep a folder:</span><code>^res://sprites/</code></div>
-          <div class="guide-example"><span class="ex-label">Remove a folder:</span><code>^res://debug/</code></div>
-        </div>
-      </div>
-
-      <!-- Add guide -->
-      <div class="guide" data-mode="add" style="display:none">
-        <div class="guide-result">&#8595; Result: downloads as <code>&lt;name&gt;-modified.pck</code></div>
-        Adds files into an existing <code>.pck</code> archive. You can add a single file or an entire ZIP at once.
-        <ol class="guide-steps">
-          <li>Drop your <code>.pck</code> file in the zone above</li>
-          <li>Choose what to add in the zone below:
-            <ul class="guide-sub">
-              <li><strong>Single file</strong> &mdash; set the <code>res://</code> destination path,
-                e.g. <code>res://sprites/hero.png</code></li>
-              <li><strong>ZIP archive</strong> &mdash; all files inside are added at once; strip a leading
-                folder to control paths, e.g. strip <code>assets</code> so that
-                <code>assets/hero.png</code> becomes <code>res://hero.png</code></li>
-            </ul>
-          </li>
-          <li>Click <strong>Add to PCK</strong></li>
+          <li>Drop or click to choose your <code>.zip</code> file</li>
+          <li>Packing runs automatically &mdash; then click Download</li>
         </ol>
       </div>
 
     </div>
 
-    <div id="drop-zone" aria-label="Choose .pck file">
+    <div id="drop-zone" aria-label="Choose file">
       <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2"
            viewBox="0 0 24 24" aria-hidden="true">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
         <polyline points="17 8 12 3 7 8"/>
         <line x1="12" y1="3" x2="12" y2="15"/>
       </svg>
-      <p>Choose .pck file</p>
+      <p id="drop-zone-label">Drop a .pck file here, or click to choose</p>
       <input type="file" id="file-input" accept=".pck" aria-label="Choose a .pck file">
-    </div>
-
-    <!-- Repack mode controls -->
-    <div id="repack-controls" style="display:none">
-      <div class="form-row">
-        <label for="include-regex">Include only files matching this regex</label>
-        <input type="text" id="include-regex" placeholder="e.g. \.png$" aria-describedby="include-regex-hint">
-        <span id="include-regex-hint" class="hint">Leave empty to include all files. Example: <code>\.png$</code> keeps only PNGs.</span>
-      </div>
-      <div class="form-row">
-        <label for="exclude-regex">Exclude files matching this regex</label>
-        <input type="text" id="exclude-regex" placeholder="e.g. \.import$" aria-describedby="exclude-regex-hint">
-        <span id="exclude-regex-hint" class="hint">Leave empty to exclude nothing. Example: <code>\.import$</code> removes Godot import files.</span>
-      </div>
-    </div>
-
-    <!-- Add mode controls -->
-    <div id="add-controls" style="display:none">
-      <div id="add-file-zone" aria-label="Choose file or ZIP to add">
-        Choose file to add (.zip or any file)
-        <input type="file" id="add-file-input" aria-label="Choose file or ZIP archive to add">
-      </div>
-      <div class="form-row" id="add-single-row">
-        <label for="pck-path">Destination path inside the PCK</label>
-        <input type="text" id="pck-path" placeholder="res://sprites/hero.png" aria-describedby="pck-path-hint">
-        <span id="pck-path-hint" class="hint">Must start with <code>res://</code>. This is the path the file will have inside the archive.</span>
-      </div>
-      <div class="form-row" id="add-zip-row" style="display:none">
-        <label for="zip-strip-prefix">Strip prefix from ZIP paths</label>
-        <input type="text" id="zip-strip-prefix" placeholder="auto-detected from ZIP" aria-describedby="zip-prefix-hint">
-        <span id="zip-prefix-hint" class="hint">Removes a leading folder from ZIP entries before adding them.<br>
-          Example: strip <code>assets</code> → <code>assets/hero.png</code> becomes <code>res://hero.png</code>.<br>
-          Leave empty to keep the full ZIP path (a common top-level folder is auto-detected).</span>
-      </div>
-      <button id="add-btn" style="display:none">Add to PCK</button>
     </div>
 
     <div id="status" role="status" aria-live="polite"></div>
     <a id="download-btn" style="display:none">Download</a>
   </div>
 
-  <!-- List mode output -->
   <div id="list-output" style="display:none">
     <div id="file-tree"></div>
   </div>
 
-  <script>
-    // ── Constants ─────────────────────────────────────────────────────────────
-    // Guide panels are static HTML elements in the DOM — no dynamic content needed.
+  <footer>
+    <a href="https://github.com/dtsykunov/GodotPckTool" target="_blank" rel="noopener">Source code</a>
+  </footer>
 
+  <script>
     // ── State ─────────────────────────────────────────────────────────────────
-    let wasmModule      = null;  // cached Emscripten module instance
-    let jszipLib        = null;  // cached JSZip class
-    let activeBlobUrl   = null;  // tracked so it can be revoked on next download
-    let isProcessing    = false; // guard against concurrent operations
-    let selectedPckFile      = null;  // add mode: the .pck to modify
-    let selectedAddFile      = null;  // add mode: the file to insert
-    let selectedAddFileIsZip = false; // add mode: whether selected add-file is a ZIP
-    let activeMode           = 'extract';
+    let wasmModule    = null;
+    let jszipLib      = null;
+    let activeBlobUrl = null;
+    let isProcessing  = false;
+    let activeMode    = 'list';
 
     // ── DOM refs ──────────────────────────────────────────────────────────────
-    const tabs           = document.querySelectorAll('.tab');
-    const dropZone       = document.getElementById('drop-zone');
-    const fileInput      = document.getElementById('file-input');
-    const repackControls = document.getElementById('repack-controls');
-    const includeRegex   = document.getElementById('include-regex');
-    const excludeRegex   = document.getElementById('exclude-regex');
-    const addControls    = document.getElementById('add-controls');
-    const addFileZone    = document.getElementById('add-file-zone');
-    const addFileInput   = document.getElementById('add-file-input');
-    const pckPathInput   = document.getElementById('pck-path');
-    const addBtn         = document.getElementById('add-btn');
-    const addSingleRow   = document.getElementById('add-single-row');
-    const addZipRow      = document.getElementById('add-zip-row');
-    const zipStripPrefix = document.getElementById('zip-strip-prefix');
-    const statusEl       = document.getElementById('status');
-    const downloadBtn    = document.getElementById('download-btn');
-    const listOutput     = document.getElementById('list-output');
-    const fileTree       = document.getElementById('file-tree');
+    const tabs          = document.querySelectorAll('.tab');
+    const dropZone      = document.getElementById('drop-zone');
+    const dropZoneLabel = document.getElementById('drop-zone-label');
+    const fileInput     = document.getElementById('file-input');
+    const statusEl      = document.getElementById('status');
+    const downloadBtn   = document.getElementById('download-btn');
+    const listOutput    = document.getElementById('list-output');
+    const fileTree      = document.getElementById('file-tree');
 
     // ── UI helpers ────────────────────────────────────────────────────────────
-    // All user-controlled content goes through textContent, never innerHTML.
     function setStatus(message, cls) {
       statusEl.textContent = message;
       statusEl.className   = cls || '';
     }
 
-    // Spinner uses only trusted static markup — no user content.
     function setStatusSpinner(staticMessage) {
       statusEl.className   = '';
       statusEl.textContent = '';
@@ -481,24 +374,22 @@
       document.querySelectorAll('#mode-desc .guide').forEach(
         g => { g.style.display = g.dataset.mode === mode ? '' : 'none'; }
       );
-      repackControls.style.display = mode === 'repack' ? 'block' : 'none';
-      addControls.style.display    = mode === 'add'    ? 'block' : 'none';
+
+      const isPack = mode === 'pack';
+      fileInput.accept            = isPack ? '.zip' : '.pck';
+      dropZoneLabel.textContent   = isPack
+        ? 'Drop a .zip file here, or click to choose'
+        : 'Drop a .pck file here, or click to choose';
+      dropZone.setAttribute('aria-label', isPack ? 'Choose .zip file' : 'Choose .pck file');
+
       setStatus('', '');
       hideDownload();
       listOutput.style.display = 'none';
       fileTree.textContent     = '';
-      selectedPckFile          = null;
-      selectedAddFile          = null;
-      selectedAddFileIsZip     = false;
-      addBtn.style.display     = 'none';
-      pckPathInput.value       = '';
-      addSingleRow.style.display = 'block';
-      addZipRow.style.display    = 'none';
-      zipStripPrefix.value       = '';
     }
 
     tabs.forEach(t => t.addEventListener('click', () => switchMode(t.dataset.mode)));
-    switchMode('extract'); // initialise description text
+    switchMode('list');
 
     // ── Lazy loaders ──────────────────────────────────────────────────────────
     function loadScript(src) {
@@ -515,7 +406,6 @@
       if (wasmModule) return wasmModule;
       console.log('[godotpcktool] Loading WASM module...');
       await loadScript('godotpcktool.js');
-      // GodotPckTool is a factory function (MODULARIZE=1, EXPORT_NAME=GodotPckTool)
       wasmModule = await GodotPckTool();
       console.log('[godotpcktool] WASM module ready');
       return wasmModule;
@@ -533,12 +423,130 @@
     }
 
     // ── WASM string helper ────────────────────────────────────────────────────
-    // Allocates a UTF-8 C string in the WASM heap. Caller must _free() the result.
     function allocString(Module, str) {
       const len = Module.lengthBytesUTF8(str) + 1;
       const ptr = Module._malloc(len);
       Module.stringToUTF8(str, ptr, len);
       return ptr;
+    }
+
+    // ── Mode: List ────────────────────────────────────────────────────────────
+    function buildTree(lines) {
+      const root = { type: 'dir', name: '', children: {} };
+      for (const line of lines) {
+        const tab   = line.indexOf('\t');
+        const path  = tab >= 0 ? line.slice(0, tab) : line;
+        const size  = tab >= 0 ? (parseInt(line.slice(tab + 1), 10) || 0) : 0;
+        const parts = path.split('/');
+        let node = root;
+        for (let i = 0; i < parts.length - 1; i++) {
+          const part = parts[i];
+          if (!node.children[part]) {
+            node.children[part] = { type: 'dir', name: part, children: {} };
+          }
+          node = node.children[part];
+        }
+        const filename = parts[parts.length - 1];
+        node.children[filename] = { type: 'file', name: filename, size };
+      }
+      return root;
+    }
+
+    function renderTree(node) {
+      const ul      = document.createElement('ul');
+      const entries = Object.values(node.children);
+      entries.sort((a, b) => {
+        if (a.type !== b.type) return a.type === 'dir' ? -1 : 1;
+        return a.name.localeCompare(b.name);
+      });
+      for (const child of entries) {
+        const li = document.createElement('li');
+        li.className = 'tree-item';
+        if (child.type === 'dir') {
+          li.classList.add('dir', 'collapsed');
+          const dirNameEl = document.createElement('span');
+          dirNameEl.className = 'dir-name';
+          const chevron = document.createElement('span');
+          chevron.className   = 'chevron';
+          chevron.textContent = '\u25B6';
+          dirNameEl.appendChild(chevron);
+          dirNameEl.appendChild(document.createTextNode(' ' + child.name));
+          dirNameEl.addEventListener('click', () => li.classList.toggle('collapsed'));
+          li.appendChild(dirNameEl);
+          li.appendChild(renderTree(child));
+        } else {
+          li.classList.add('file');
+          const fileNameEl = document.createElement('span');
+          fileNameEl.className   = 'file-name';
+          fileNameEl.textContent = child.name;
+          const fileSizeEl = document.createElement('span');
+          fileSizeEl.className   = 'file-size';
+          fileSizeEl.textContent = formatSize(child.size);
+          li.appendChild(fileNameEl);
+          li.appendChild(fileSizeEl);
+        }
+        ul.appendChild(li);
+      }
+      return ul;
+    }
+
+    async function listContents(file) {
+      if (isProcessing) {
+        setStatus('Please wait for the current operation to finish.', 'error');
+        return;
+      }
+      isProcessing = true;
+      try {
+        hideDownload();
+        listOutput.style.display = 'none';
+        setStatusSpinner('Loading\u2026');
+
+        let Module;
+        try {
+          Module = await getWasmModule();
+        } catch (e) {
+          setStatus('Failed to load: ' + e.message, 'error');
+          return;
+        }
+
+        setStatusSpinner('Reading ' + file.name + '\u2026');
+
+        let bytes;
+        try {
+          bytes = new Uint8Array(await file.arrayBuffer());
+        } catch (e) {
+          setStatus('Failed to read file: ' + e.message, 'error');
+          return;
+        }
+
+        console.log('[godotpcktool] Calling listPck:', file.name, bytes.length, 'bytes');
+
+        const ptr       = Module._malloc(bytes.length);
+        Module.HEAPU8.set(bytes, ptr);
+        const resultPtr = Module._listPck(ptr, bytes.length);
+        Module._free(ptr);
+
+        if (!resultPtr) {
+          const err = Module.UTF8ToString(Module._getLastError());
+          console.error('[godotpcktool] listPck error:', err);
+          setStatus(err, 'error');
+          return;
+        }
+
+        const manifestStr = Module.UTF8ToString(resultPtr);
+        const lines       = manifestStr.split('\n').filter(Boolean);
+        console.log('[godotpcktool] Listed', lines.length, 'files');
+
+        const treeEl = renderTree(buildTree(lines));
+        treeEl.className    = 'tree-list';
+        fileTree.textContent = '';
+        fileTree.appendChild(treeEl);
+        listOutput.style.display = 'block';
+        const word = lines.length === 1 ? 'file' : 'files';
+        setStatus(lines.length + ' ' + word + ' in ' + file.name, 'success');
+      } finally {
+        isProcessing = false;
+      }
     }
 
     // ── Mode: Extract ─────────────────────────────────────────────────────────
@@ -550,14 +558,13 @@
       isProcessing = true;
       try {
         hideDownload();
-        setStatusSpinner('Loading extractor\u2026');
+        setStatusSpinner('Loading\u2026');
 
         let Module, JSZip;
         try {
           [Module, JSZip] = await Promise.all([getWasmModule(), getJSZip()]);
         } catch (e) {
-          console.error('[godotpcktool] Load error:', e);
-          setStatus('Failed to load extractor: ' + e.message, 'error');
+          setStatus('Failed to load: ' + e.message, 'error');
           return;
         }
 
@@ -613,72 +620,8 @@
       }
     }
 
-    // ── Mode: List ────────────────────────────────────────────────────────────
-    // Converts flat ["path\tsize", ...] manifest lines into a nested tree object.
-    // Each node: { type: 'dir'|'file', name: string, children?: {}, size?: number }
-    function buildTree(lines) {
-      const root = { type: 'dir', name: '', children: {} };
-      for (const line of lines) {
-        const tab   = line.indexOf('\t');
-        const path  = tab >= 0 ? line.slice(0, tab) : line;
-        const size  = tab >= 0 ? (parseInt(line.slice(tab + 1), 10) || 0) : 0;
-        const parts = path.split('/');
-        let node = root;
-        for (let i = 0; i < parts.length - 1; i++) {
-          const part = parts[i];
-          if (!node.children[part]) {
-            node.children[part] = { type: 'dir', name: part, children: {} };
-          }
-          node = node.children[part];
-        }
-        const filename = parts[parts.length - 1];
-        node.children[filename] = { type: 'file', name: filename, size };
-      }
-      return root;
-    }
-
-    // Recursively renders a tree node into a <ul> DOM element.
-    // Directories first (alphabetical), then files (alphabetical).
-    // All directories start collapsed.
-    function renderTree(node) {
-      const ul      = document.createElement('ul');
-      const entries = Object.values(node.children);
-      entries.sort((a, b) => {
-        if (a.type !== b.type) return a.type === 'dir' ? -1 : 1;
-        return a.name.localeCompare(b.name);
-      });
-      for (const child of entries) {
-        const li = document.createElement('li');
-        li.className = 'tree-item';
-        if (child.type === 'dir') {
-          li.classList.add('dir', 'collapsed');
-          const dirNameEl = document.createElement('span');
-          dirNameEl.className = 'dir-name';
-          const chevron = document.createElement('span');
-          chevron.className   = 'chevron';
-          chevron.textContent = '\u25B6'; // ▶
-          dirNameEl.appendChild(chevron);
-          dirNameEl.appendChild(document.createTextNode(' ' + child.name));
-          dirNameEl.addEventListener('click', () => li.classList.toggle('collapsed'));
-          li.appendChild(dirNameEl);
-          li.appendChild(renderTree(child));
-        } else {
-          li.classList.add('file');
-          const fileNameEl = document.createElement('span');
-          fileNameEl.className   = 'file-name';
-          fileNameEl.textContent = child.name;
-          const fileSizeEl = document.createElement('span');
-          fileSizeEl.className   = 'file-size';
-          fileSizeEl.textContent = formatSize(child.size);
-          li.appendChild(fileNameEl);
-          li.appendChild(fileSizeEl);
-        }
-        ul.appendChild(li);
-      }
-      return ul;
-    }
-
-    async function listContents(file) {
+    // ── Mode: Pack ────────────────────────────────────────────────────────────
+    async function packZip(file) {
       if (isProcessing) {
         setStatus('Please wait for the current operation to finish.', 'error');
         return;
@@ -686,401 +629,114 @@
       isProcessing = true;
       try {
         hideDownload();
-        listOutput.style.display = 'none';
-        setStatusSpinner('Loading extractor\u2026');
+        setStatusSpinner('Loading\u2026');
 
-        let Module;
+        let Module, JSZip;
         try {
-          Module = await getWasmModule();
+          [Module, JSZip] = await Promise.all([getWasmModule(), getJSZip()]);
         } catch (e) {
-          setStatus('Failed to load extractor: ' + e.message, 'error');
+          setStatus('Failed to load: ' + e.message, 'error');
           return;
         }
 
         setStatusSpinner('Reading ' + file.name + '\u2026');
 
-        let bytes;
+        let zipBytes;
         try {
-          bytes = new Uint8Array(await file.arrayBuffer());
+          zipBytes = await file.arrayBuffer();
         } catch (e) {
           setStatus('Failed to read file: ' + e.message, 'error');
           return;
         }
 
-        console.log('[godotpcktool] Calling listPck:', file.name, bytes.length, 'bytes');
-
-        const ptr       = Module._malloc(bytes.length);
-        Module.HEAPU8.set(bytes, ptr);
-        const resultPtr = Module._listPck(ptr, bytes.length);
-        Module._free(ptr);
-
-        if (!resultPtr) {
-          const err = Module.UTF8ToString(Module._getLastError());
-          console.error('[godotpcktool] listPck error:', err);
-          setStatus(err, 'error');
-          return;
-        }
-
-        const manifestStr = Module.UTF8ToString(resultPtr);
-        const lines       = manifestStr.split('\n').filter(Boolean);
-        console.log('[godotpcktool] Listed', lines.length, 'files');
-
-        const treeEl = renderTree(buildTree(lines));
-        treeEl.className    = 'tree-list';
-        fileTree.textContent = '';
-        fileTree.appendChild(treeEl);
-        listOutput.style.display = 'block';
-        const word = lines.length === 1 ? 'file' : 'files';
-        setStatus(lines.length + ' ' + word + ' in ' + file.name, 'success');
-      } finally {
-        isProcessing = false;
-      }
-    }
-
-    // ── Mode: Repack ──────────────────────────────────────────────────────────
-    async function repackFile(file) {
-      if (isProcessing) {
-        setStatus('Please wait for the current operation to finish.', 'error');
-        return;
-      }
-      isProcessing = true;
-      try {
-        hideDownload();
-        setStatusSpinner('Loading extractor\u2026');
-
-        let Module;
+        let zip;
         try {
-          Module = await getWasmModule();
+          zip = await new JSZip().loadAsync(zipBytes);
         } catch (e) {
-          setStatus('Failed to load extractor: ' + e.message, 'error');
+          setStatus('Failed to parse ZIP: ' + e.message, 'error');
           return;
         }
 
-        const incRe = includeRegex.value.trim();
-        const excRe = excludeRegex.value.trim();
-        setStatusSpinner('Repacking ' + file.name + '\u2026');
+        const entries = [];
+        zip.forEach((relPath, entry) => {
+          if (!entry.dir) entries.push({ relPath, entry });
+        });
 
-        let bytes;
+        if (entries.length === 0) {
+          setStatus('ZIP contains no files.', 'error');
+          return;
+        }
+
+        setStatusSpinner('Staging ' + entries.length + ' files\u2026');
+
+        // Clean up any leftover staged files from prior runs
         try {
-          bytes = new Uint8Array(await file.arrayBuffer());
-        } catch (e) {
-          setStatus('Failed to read file: ' + e.message, 'error');
-          return;
+          const stale = Module.FS.readdir('/pack_staged').filter(n => n !== '.' && n !== '..');
+          for (const n of stale) Module.FS.unlink('/pack_staged/' + n);
+        } catch (_) {}
+        try { Module.FS.mkdir('/pack_staged'); } catch (_) {}
+
+        const manifestLines = [];
+        for (let i = 0; i < entries.length; i++) {
+          const { relPath, entry } = entries[i];
+          const memfsPath = '/pack_staged/' + i;
+
+          let bytes;
+          try {
+            bytes = await entry.async('uint8array');
+          } catch (e) {
+            setStatus('Failed to read ' + relPath + ' from ZIP: ' + e.message, 'error');
+            return;
+          }
+
+          try {
+            Module.FS.writeFile(memfsPath, bytes);
+          } catch (e) {
+            setStatus('Failed to stage ' + relPath + ': ' + e.message, 'error');
+            return;
+          }
+
+          manifestLines.push(memfsPath + '\t' + relPath);
         }
 
-        console.log('[godotpcktool] Calling repackPck:', file.name, bytes.length, 'bytes',
-          'include:', incRe || '(none)', 'exclude:', excRe || '(none)');
+        const manifest = manifestLines.join('\n');
+        setStatusSpinner('Packing ' + entries.length + ' files\u2026');
 
-        const ptr    = Module._malloc(bytes.length);
-        Module.HEAPU8.set(bytes, ptr);
-        const incPtr = allocString(Module, incRe);
-        const excPtr = allocString(Module, excRe);
-        const result = Module._repackPck(ptr, bytes.length, incPtr, excPtr);
-        Module._free(ptr);
-        Module._free(incPtr);
-        Module._free(excPtr);
+        console.log('[godotpcktool] Calling createPckFromManifest:', entries.length, 'files from', file.name);
+
+        const manifestPtr = allocString(Module, manifest);
+        const result      = Module._createPckFromManifest(manifestPtr);
+        Module._free(manifestPtr);
 
         if (result !== 0) {
           const err = Module.UTF8ToString(Module._getLastError());
-          console.error('[godotpcktool] repackPck error:', err);
+          console.error('[godotpcktool] createPckFromManifest error:', err);
           setStatus(err, 'error');
           return;
         }
 
         const outBytes = Module.FS.readFile('/output.pck');
         const blob     = new Blob([outBytes], { type: 'application/octet-stream' });
-        const outName  = file.name.replace(/\.pck$/i, '') + '-repacked.pck';
-        console.log('[godotpcktool] Repack done:', outName, blob.size, 'bytes');
-        setStatus('Repacked ' + file.name + ' (' + formatSize(blob.size) + ')', 'success');
+        const outName  = file.name.replace(/\.zip$/i, '') + '.pck';
+        const word     = entries.length === 1 ? 'file' : 'files';
+        console.log('[godotpcktool] Pack done:', outName, blob.size, 'bytes');
+        setStatus('Packed ' + entries.length + ' ' + word + ' into ' + outName, 'success');
         showDownload(blob, outName);
       } finally {
         isProcessing = false;
       }
     }
 
-    // ── Mode: Add ─────────────────────────────────────────────────────────────
-    function updateAddStatus() {
-      if (!selectedPckFile) {
-        setStatus('Drop a .pck file in the zone above to get started.', '');
-        addBtn.style.display = 'none';
-      } else if (!selectedAddFile) {
-        setStatus('PCK ready: ' + selectedPckFile.name + '. Now choose the file to add below.', '');
-        addBtn.style.display = 'none';
-      } else if (selectedAddFileIsZip) {
-        setStatus('ZIP ready: ' + selectedAddFile.name + '. Click \u201cAdd to PCK\u201d to add all files.', 'success');
-        addBtn.style.display = 'block';
-      } else {
-        setStatus('Ready: add ' + selectedAddFile.name + ' into ' + selectedPckFile.name, 'success');
-        addBtn.style.display = 'block';
-      }
-    }
-
-    async function runAdd() {
-      if (isProcessing) {
-        setStatus('Please wait for the current operation to finish.', 'error');
-        return;
-      }
-      if (!selectedPckFile || !selectedAddFile) {
-        setStatus('Select both files first.', 'error');
-        return;
-      }
-      if (!selectedAddFileIsZip) {
-        const pckPath = pckPathInput.value.trim();
-        if (!pckPath) {
-          setStatus('Enter a destination path inside the PCK (e.g. res://myfile.png).', 'error');
-          return;
-        }
-      }
-
-      isProcessing = true;
-      try {
-        hideDownload();
-
-        if (selectedAddFileIsZip) {
-          // ── ZIP branch ──────────────────────────────────────────────────────
-          setStatusSpinner('Loading tools\u2026');
-
-          let Module, JSZip;
-          try {
-            [Module, JSZip] = await Promise.all([getWasmModule(), getJSZip()]);
-          } catch (e) {
-            setStatus('Failed to load tools: ' + e.message, 'error');
-            return;
-          }
-
-          setStatusSpinner('Reading ZIP\u2026');
-
-          let zipBytes;
-          try {
-            zipBytes = await selectedAddFile.arrayBuffer();
-          } catch (e) {
-            setStatus('Failed to read ZIP: ' + e.message, 'error');
-            return;
-          }
-
-          let zip;
-          try {
-            zip = await new JSZip().loadAsync(zipBytes);
-          } catch (e) {
-            setStatus('Failed to parse ZIP: ' + e.message, 'error');
-            return;
-          }
-
-          // Collect non-directory entries
-          const entries = [];
-          zip.forEach((relPath, file) => {
-            if (!file.dir) entries.push({ relPath, file });
-          });
-
-          if (entries.length === 0) {
-            setStatus('ZIP contains no files.', 'error');
-            return;
-          }
-
-          // Auto-detect strip prefix: common top-level folder across all entries
-          let stripPrefix = zipStripPrefix.value.trim();
-          if (!stripPrefix) {
-            const firstSegment = entries[0].relPath.split('/')[0];
-            const allSharePrefix = entries.every(e => e.relPath.split('/')[0] === firstSegment);
-            const anyHasSubdir   = entries.some(e => e.relPath.includes('/'));
-            if (allSharePrefix && anyHasSubdir) {
-              stripPrefix          = firstSegment;
-              zipStripPrefix.value = stripPrefix;
-            }
-          }
-
-          setStatusSpinner('Staging ' + entries.length + ' files\u2026');
-
-          // Ensure /add_staged/ exists in MEMFS, clearing stale files from prior runs
-          try {
-            const stale = Module.FS.readdir('/add_staged').filter(n => n !== '.' && n !== '..');
-            for (const n of stale) Module.FS.unlink('/add_staged/' + n);
-          } catch (_) { /* directory doesn't exist yet */ }
-          try { Module.FS.mkdir('/add_staged'); } catch (_) { /* already exists */ }
-
-          const manifestLines = [];
-          for (let i = 0; i < entries.length; i++) {
-            const { relPath, file } = entries[i];
-            let pckRelPath = relPath;
-            if (stripPrefix && pckRelPath.startsWith(stripPrefix + '/')) {
-              pckRelPath = pckRelPath.slice(stripPrefix.length + 1);
-            }
-            const pckPath   = pckRelPath;
-            const memfsPath = '/add_staged/' + i;
-
-            let bytes;
-            try {
-              bytes = await file.async('uint8array');
-            } catch (e) {
-              setStatus('Failed to read ' + relPath + ' from ZIP: ' + e.message, 'error');
-              return;
-            }
-
-            try {
-              Module.FS.writeFile(memfsPath, bytes);
-            } catch (e) {
-              setStatus('Failed to stage ' + relPath + ' in memory: ' + e.message, 'error');
-              return;
-            }
-            manifestLines.push(memfsPath + '\t' + pckPath);
-          }
-
-          const manifest = manifestLines.join('\n');
-          setStatusSpinner('Adding ' + entries.length + ' files to ' + selectedPckFile.name + '\u2026');
-
-          let pckBytes;
-          try {
-            pckBytes = new Uint8Array(await selectedPckFile.arrayBuffer());
-          } catch (e) {
-            setStatus('Failed to read PCK: ' + e.message, 'error');
-            return;
-          }
-
-          console.log('[godotpcktool] Calling addMultipleFilesToPck:',
-            selectedPckFile.name, pckBytes.length, 'bytes +',
-            entries.length, 'files from', selectedAddFile.name);
-
-          const pckPtr      = Module._malloc(pckBytes.length);
-          Module.HEAPU8.set(pckBytes, pckPtr);
-          const manifestPtr = allocString(Module, manifest);
-          const result      = Module._addMultipleFilesToPck(pckPtr, pckBytes.length, manifestPtr);
-          Module._free(pckPtr);
-          Module._free(manifestPtr);
-
-          if (result !== 0) {
-            const err = Module.UTF8ToString(Module._getLastError());
-            console.error('[godotpcktool] addMultipleFilesToPck error:', err);
-            setStatus(err, 'error');
-            return;
-          }
-
-          const outBytes = Module.FS.readFile('/output.pck');
-          const blob     = new Blob([outBytes], { type: 'application/octet-stream' });
-          const outName  = selectedPckFile.name.replace(/\.pck$/i, '') + '-modified.pck';
-          const word     = entries.length === 1 ? 'file' : 'files';
-          console.log('[godotpcktool] ZIP add done:', outName, blob.size, 'bytes');
-          setStatus('Added ' + entries.length + ' ' + word + ' from ' + selectedAddFile.name, 'success');
-          showDownload(blob, outName);
-
-        } else {
-          // ── Single-file branch (unchanged) ──────────────────────────────────
-          const pckPath = pckPathInput.value.trim();
-          setStatusSpinner('Loading extractor\u2026');
-
-          let Module;
-          try {
-            Module = await getWasmModule();
-          } catch (e) {
-            setStatus('Failed to load extractor: ' + e.message, 'error');
-            return;
-          }
-
-          setStatusSpinner('Adding ' + selectedAddFile.name + ' to ' + selectedPckFile.name + '\u2026');
-
-          let pckBytes, fileBytes;
-          try {
-            [pckBytes, fileBytes] = await Promise.all([
-              selectedPckFile.arrayBuffer().then(b => new Uint8Array(b)),
-              selectedAddFile.arrayBuffer().then(b => new Uint8Array(b))
-            ]);
-          } catch (e) {
-            setStatus('Failed to read files: ' + e.message, 'error');
-            return;
-          }
-
-          console.log('[godotpcktool] Calling addToPck:',
-            selectedPckFile.name, pckBytes.length, '+',
-            selectedAddFile.name, fileBytes.length, '->', pckPath);
-
-          const pckPtr  = Module._malloc(pckBytes.length);
-          Module.HEAPU8.set(pckBytes, pckPtr);
-          const filePtr = Module._malloc(fileBytes.length);
-          Module.HEAPU8.set(fileBytes, filePtr);
-          const pathPtr = allocString(Module, pckPath);
-          const result  = Module._addToPck(pckPtr, pckBytes.length, filePtr, fileBytes.length, pathPtr);
-          Module._free(pckPtr);
-          Module._free(filePtr);
-          Module._free(pathPtr);
-
-          if (result !== 0) {
-            const err = Module.UTF8ToString(Module._getLastError());
-            console.error('[godotpcktool] addToPck error:', err);
-            setStatus(err, 'error');
-            return;
-          }
-
-          const outBytes = Module.FS.readFile('/output.pck');
-          const blob     = new Blob([outBytes], { type: 'application/octet-stream' });
-          const outName  = selectedPckFile.name.replace(/\.pck$/i, '') + '-modified.pck';
-          console.log('[godotpcktool] Add done:', outName, blob.size, 'bytes');
-          setStatus('Added ' + selectedAddFile.name + ' to ' + selectedPckFile.name, 'success');
-          showDownload(blob, outName);
-        }
-      } finally {
-        isProcessing = false;
-      }
-    }
-
-    addBtn.addEventListener('click', runAdd);
-
-    // ── Add file zone wiring ──────────────────────────────────────────────────
-    addFileZone.addEventListener('click', () => addFileInput.click());
-    addFileInput.addEventListener('change', () => {
-      const f = addFileInput.files[0];
-      if (!f) return;
-      selectedAddFile      = f;
-      selectedAddFileIsZip = f.name.toLowerCase().endsWith('.zip') ||
-                             f.type === 'application/zip';
-      if (selectedAddFileIsZip) {
-        addSingleRow.style.display = 'none';
-        addZipRow.style.display    = 'block';
-        zipStripPrefix.value       = '';
-      } else {
-        addSingleRow.style.display = 'block';
-        addZipRow.style.display    = 'none';
-        if (!pckPathInput.value) pckPathInput.value = 'res://' + f.name;
-      }
-      updateAddStatus();
-    });
-    addFileZone.addEventListener('dragover', e => {
-      e.preventDefault();
-      addFileZone.classList.add('drag-over');
-    });
-    addFileZone.addEventListener('dragleave', () => addFileZone.classList.remove('drag-over'));
-    addFileZone.addEventListener('drop', e => {
-      e.preventDefault();
-      addFileZone.classList.remove('drag-over');
-      const f = e.dataTransfer.files[0];
-      if (!f) return;
-      selectedAddFile      = f;
-      selectedAddFileIsZip = f.name.toLowerCase().endsWith('.zip') ||
-                             f.type === 'application/zip';
-      if (selectedAddFileIsZip) {
-        addSingleRow.style.display = 'none';
-        addZipRow.style.display    = 'block';
-        zipStripPrefix.value       = '';
-      } else {
-        addSingleRow.style.display = 'block';
-        addZipRow.style.display    = 'none';
-        if (!pckPathInput.value) pckPathInput.value = 'res://' + f.name;
-      }
-      updateAddStatus();
-    });
-
-    // ── Main PCK drop zone ────────────────────────────────────────────────────
-    function handlePckFile(file) {
-      if      (activeMode === 'extract') extractAndZip(file);
-      else if (activeMode === 'list')    listContents(file);
-      else if (activeMode === 'repack')  repackFile(file);
-      else if (activeMode === 'add') {
-        selectedPckFile = file;
-        updateAddStatus();
-      }
+    // ── Drop zone wiring ──────────────────────────────────────────────────────
+    function handleFile(file) {
+      if      (activeMode === 'list')    listContents(file);
+      else if (activeMode === 'extract') extractAndZip(file);
+      else if (activeMode === 'pack')    packZip(file);
     }
 
     dropZone.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', () => {
-      if (fileInput.files[0]) handlePckFile(fileInput.files[0]);
+      if (fileInput.files[0]) handleFile(fileInput.files[0]);
     });
     dropZone.addEventListener('dragover', e => {
       e.preventDefault();
@@ -1091,7 +747,7 @@
       e.preventDefault();
       dropZone.classList.remove('drag-over');
       const file = e.dataTransfer.files[0];
-      if (file) handlePckFile(file);
+      if (file) handleFile(file);
     });
   </script>
 </body>

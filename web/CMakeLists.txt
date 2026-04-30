@@ -42,7 +42,7 @@ set_target_properties(godotpcktool PROPERTIES
 
 # SHELL: prefix prevents CMake from deduplicating/splitting bracketed argument lists
 target_link_options(godotpcktool PRIVATE
-    "SHELL:-sEXPORTED_FUNCTIONS=['_extractPck','_getExtractedFiles','_getLastError','_listPck','_repackPck','_addToPck','_addMultipleFilesToPck','_malloc','_free']"
+    "SHELL:-sEXPORTED_FUNCTIONS=['_extractPck','_getExtractedFiles','_getLastError','_listPck','_createPckFromManifest','_malloc','_free']"
     "SHELL:-sEXPORTED_RUNTIME_METHODS=['FS','HEAPU8','UTF8ToString','stringToUTF8','lengthBytesUTF8']"
     -sALLOW_MEMORY_GROWTH=1
     -sMODULARIZE=1

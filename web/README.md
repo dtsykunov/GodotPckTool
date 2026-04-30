@@ -3,43 +3,28 @@
 A fully client-side web interface for working with Godot `.pck` archive files.
 No server, no installation, no data leaves your machine.
 
+## Workflow
+
+**Extract → edit files locally → Pack**
+
+1. Use **Extract** to download all files from a `.pck` as a `.zip`.
+2. Open the `.zip` and edit or replace files using your file manager.
+3. Use **Pack** to turn the modified `.zip` back into a `.pck`.
+
 ## Modes
 
-### Extract → .zip
-Drop a `.pck` file to extract all its contents and download them as a `.zip` archive.
-The original directory structure inside the PCK is preserved.
+### List
+Browse the contents of a `.pck` — file names, folder structure, and sizes. Nothing is downloaded.
 
-### List contents
-Drop a `.pck` file to inspect what is inside it. A table showing each file path and
-its size appears in the page — nothing is downloaded. File sizes shown reflect the
-extracted (uncompressed) size, not the compressed size stored in the archive.
+### Extract
+Extract all files from a `.pck` into a `.zip` archive you can open and edit locally.
+The original directory structure is preserved.
+Result downloads as `<name>.zip`.
 
-### Repack (filter)
-Drop a `.pck` file to repack it. Optionally filter which files are included using
-ECMAScript regex patterns:
-
-- **Include regex** — only files whose path matches this regex are kept.
-  Leave empty to keep all files.
-- **Exclude regex** — files whose path matches this regex are removed.
-  Leave empty to remove nothing.
-
-Examples:
-- Include `\.png$` — keep only PNG textures
-- Exclude `\.import$` — strip Godot import metadata files
-
-The result downloads as `<original-name>-repacked.pck`.
-
-### Add file
-Add a single file into an existing `.pck` archive:
-
-1. Drop the `.pck` file you want to modify into the main drop zone.
-2. Drop (or select) the file you want to add using the second picker.
-3. Edit the **Destination path** field — it pre-fills with `res://<filename>`.
-   Change it to match where the file should live inside the archive
-   (e.g. `res://sprites/hero.png`).
-4. Click **Add to PCK**.
-
-The result downloads as `<original-name>-modified.pck`.
+### Pack
+Create a `.pck` from a `.zip` archive.
+Every file in the ZIP becomes a file in the PCK at the same path.
+Result downloads as `<name>.pck`.
 
 ---
 
@@ -75,8 +60,6 @@ python3 -m http.server 8080 --directory web/
 
 # Node.js
 npx serve web/
-
-# Any other static server works too
 ```
 
 Then open `http://localhost:8080` in your browser.
@@ -96,7 +79,7 @@ Requires a modern browser with WebAssembly and ES2017 support:
 ## Limitations
 
 - **Encrypted PCKs** are not supported — extraction and listing will fail.
-- **Add mode** inserts one file per operation. Run again to add more files.
 - **No progress bar** for large archives — the page is unresponsive during
-  extraction; this is normal.
-- **Repack to a different Godot version** is not supported via the browser UI.
+  processing; this is normal.
+- **Godot version metadata** is not preserved when packing — the output PCK
+  reports version 0.0.0. Use the command-line tool if you need to control this.

@@ -3,6 +3,12 @@ Godot Pck Tool
 
 A standalone executable for unpacking and packing Godot .pck files.
 
+Browser interface
+-----------------
+
+A client-side web UI is available for basic operations (list, extract, repack)
+without installing anything. See [web/README.md](web/README.md) for details.
+
 Command line usage
 ------------------
 
